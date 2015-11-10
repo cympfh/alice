@@ -10,6 +10,9 @@ training data
 ```bash
    wc /tmp/text
 200
+```
+
+```bash
    head /tmp/text
 ```
 
@@ -23,7 +26,6 @@ Pharmacokinetic_JJ ,_, biodistribution_NN ,_, and_CC histological_JJ studies_NNS
 In_FW vivo_FW biodistribution_NN and_CC uptake_NN of_IN -LRB-_-LRB- 111_CD -RRB-_-RRB- In-DTPA-11B6_NN were_VBD measured_VBN until_IN 168_CD h_NN post-injection_NN in_IN NMRI_NNP nude_JJ mice_NNS bearing_VBG subcutaneous_JJ LNCaP_NN xenografts_NNS ._.
 The_DT binding_NN specificity_NN to_TO hK2_NN was_VBD evaluated_VBN by_IN both_CC in_FW vivo_FW competitive_JJ binding_NN assays_NNS with_IN excess_JJ non-labelled_JJ 11B6_NN and_CC hK2-negative_JJ DU145_NN xenografts_NNS ._.
 SPECT/CT_NN imaging_NN of_IN subcutaneous_JJ and_CC intra-tibial_JJ LNCaP_NN xenografts_NNS was_VBD used_VBN to_TO visualize_VB the_DT tumours_NNS ._.
- :
 ```
 
 run
