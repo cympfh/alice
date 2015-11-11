@@ -35,7 +35,7 @@ void usage() {
   cerr << "Usage: alice [options] [file]" << endl;
   cerr << "  if file not specified, stdin will be read" << endl;
   cerr << "options:" << endl;
-  cerr << "  -D, --delimiter            delimiter character between word and POS in text" << endl;
+  cerr << "  -d, --delimiter            delimiter character between word and POS in text" << endl;
   cerr << "  -l, --limit                preserved option" << endl;
   cerr << "  -P, --pool-size            maximum pool size (= 20)" << endl;
   cerr << "  -B, --book-size            maximum size of a book (= 5)" << endl;
