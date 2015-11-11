@@ -37,8 +37,7 @@ coverset(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
   return make_pair(S, s);
 }
 
-Pattern tighten(const Pattern&p, const vector<Text*>&C)
-{{{
+Pattern tighten(const Pattern&p, const vector<Text*>&C) {
   // assert ( C subseteq L(p) )
   Pattern q = p;
   Pattern r;
@@ -46,20 +45,13 @@ Pattern tighten(const Pattern&p, const vector<Text*>&C)
   int n;
 
   map<string, vector<string>> dict; // dict[pos] = { word }
-  {
-    for (Text* t: C) {
-      for (const Alphabet& a: *t) {
-        dict[a.pos].push_back(a.word);
-      }
-    }
-  }
+  for (Text* t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
+  vector<string> poss;
+  for (auto&kv: dict) poss.push_back(kv.first);
 
 tighten_begin:
   if (is_text(q)) return q;
   n = q.size();
-
-  vector<string> poss;
-  for (auto&kv: dict) poss.push_back(kv.first);
 
   // <> -> <A>
   for (const string& pos: poss) {
@@ -100,11 +92,10 @@ tighten_begin:
   }
 
   return q;
-}}}
+}
 
 vector<tuple<Pattern, vector<Text*>, vector<int>> >
-cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c)
-{{{
+cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
   assert(C.size() == c.size());
 
   const int n = p.size();
@@ -113,13 +104,7 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c)
   vector<tuple<Pattern, vector<Text*>, vector<int>> > ret;
 
   map<string, vector<string>> dict; // dict[pos] = { word }
-  {
-    for (auto&t: C) {
-      for (const Alphabet& a: *t) {
-        dict[a.pos].push_back(a.word);
-      }
-    }
-  }
+  for (auto&t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
 
   vector<string> poss;
   for (auto&kv: dict) poss.push_back(kv.first);
@@ -177,7 +162,7 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c)
   }
 
   return ret;
-}}}
+}
 
 inline
 vector< tuple<Pattern, vector<Text*>, vector<int>> >
@@ -193,7 +178,9 @@ kdivision(
     return {make_tuple(p, S, s)};
   }
 
-  auto ps = cspc(p, S, s);
+  vector<tuple<Pattern, vector<Text*>, vector<int>> > ps;
+  ps = cspc(p, S, s);
+
   if (DEBUG) {{{
     cerr << "* cspc:" << ps.size() << endl;
     cerr << "{{{" << endl;
@@ -247,19 +234,19 @@ kdivision(
 }
 
 vector< tuple<Pattern, vector<Text*>, vector<int>> >
-kmmg(int k, vector<Text*>&doc, const Pattern&top, bool DEBUG)
+kmmg(int k, vector<Text*>&doc, Pattern p0, bool DEBUG)
 {
   if (DEBUG) {
-    cerr << "# kmmg from " << top << endl;
+    cerr << "# kmmg from " << p0 << endl;
     trace(doc.size());
     trace(k);
   }
 
   vector< tuple<Pattern, vector<Text*>, vector<int>> > ret;
 
-  Pattern p0 = tighten(top, doc);
-  vector<int> cover_count(doc.size(), 1); // num of patterns covering doc[i]
+  p0 = tighten(p0, doc);
 
+  vector<int> cover_count(doc.size(), 1); // num of patterns covering doc[i]
   vector<int> doc_i = iota(doc.size());
 
   priority_queue<

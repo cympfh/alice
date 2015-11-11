@@ -83,7 +83,7 @@ bool preceq(const Text&s, const Pattern&p) {
 
 bool preceq(const PUnit&a, const PUnit&b) {
   if (b.t == VAR) return true;
-  return a.pos == b.pos or (b.t == POS or a.word == b.word);
+  return a.pos == b.pos and (b.t == POS or a.word == b.word);
 }
 
 bool preceq(const Pattern&q, const Pattern&p) {

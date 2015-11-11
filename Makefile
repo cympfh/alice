@@ -1,7 +1,7 @@
 CXXFLAGS=-O3 -std=c++11
 
 mytest: alice
-	./alice -D ~/Corpus/abstracts/train-sentences/CONCLUSION.pos -L test.log >/dev/null
+	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.pos | head -n 600 | ./alice -D -P 10 -B 30 -L test.log -I 300 >/dev/null
 	cp test.log log/$$(date "+%m%d.%H%M.%S.log")
 
 alice: main.cc read.o ges.o pattern.o text.o setcover.o minl.o

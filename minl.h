@@ -5,7 +5,16 @@ kdivision(
     const vector<Text*>&S,
     const vector<int>&s,
     bool DEBUG=false);
+
 vector<tuple<Pattern, vector<Text*>, vector<int>>>
-kmmg(int, vector<Text*>&, bool DEBUG=false);
+kmmg(
+    int k,
+    vector<Text*>&C,
+    bool DEBUG=false);
+
 vector<tuple<Pattern, vector<Text*>, vector<int>>>
-kmmg(int, vector<Text*>&, const Pattern&, bool DEBUG=false);
+kmmg(
+    int k,
+    vector<Text*>&C,
+    const Pattern&p,
+    bool DEBUG=false);

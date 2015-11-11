@@ -92,10 +92,25 @@ int main() {
    * pattern <= pattern
    */
   {
+    Pattern top = { PUnit() };
     Pattern q = { PUnit("A"), PUnit("B"), PUnit(), PUnit("B"), PUnit("B", "b") };
     Pattern p = { PUnit("A"), PUnit(), PUnit("B"), PUnit("B") };
+    assert(preceq(p, top));
+    assert(preceq(q, top));
     assert(preceq(q, p));
+    assert(not preceq(p, q));
     assert(preceq(q, q));
     assert(preceq(p, p));
+  }
+  {
+    Pattern p = { PUnit(), PUnit("A", "a"), PUnit(), PUnit() };
+    Pattern q = { PUnit(), PUnit("A"), PUnit("B"), PUnit() };
+    Pattern r = { PUnit(), PUnit("A", "a"), PUnit() };
+    assert(not preceq(p, q));
+    assert(not preceq(q, p));
+    assert(not preceq(r, p));
+    assert(preceq(p, r));
+    assert(not preceq(q, r));
+    assert(not preceq(r, q));
   }
 }

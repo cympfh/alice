@@ -20,6 +20,7 @@ void usage() {
   cerr << "  -P, --pool-size            maximum pool size (= 20)" << endl;
   cerr << "  -B, --book-size            maximum size of a book (= 5)" << endl;
   cerr << "  -L, --log <filename=>      output logfile" << endl;
+  cerr << "  -I  <int>                  only when (time < I) or (T - time < I) (= T)" << endl;
   cerr << "  -D, --debug                debug mode" << endl;
   cerr << "  -?, --help                 it is this" << endl;
   exit(0);
@@ -38,10 +39,14 @@ int main(int argc, char *argv[])
   bool DEBUG = false;
   char delimiter = '_';
   double limit = 1.0;
-  bool logging = false;
+  bool log_mode = false;
   ofstream log;
+  int log_I = -1;
   int POOL_SIZE = 20;
   int BOOK_SIZE = 5;
+
+  int GOOD_COVERING_FROM_POOL = 2; // これ以上被覆してたら良いとする
+  int GOOD_COVERING_FROM_BOOK = 3;
 
   vector<string> restargs;
   for (size_t i = 1; i < argc; ++i) {
@@ -64,14 +69,22 @@ int main(int argc, char *argv[])
       ++i;
     }
     else if (arg == "-L" or arg == "--log") {
-      logging = true;
+      log_mode = true;
       log.open(nextarg);
+      ++i;
+    }
+    else if (arg == "-I") {
+      log_I = atoi(argv[i+1]);
       ++i;
     }
     else if (arg == "-D" or arg == "--debug") {
       DEBUG = true;
     }
     else if (arg == "-?" or arg == "--help") {
+      usage();
+    }
+    else if (arg[0] == '-') {
+      cerr << "unknown option:" << arg << endl;
       usage();
     }
     else {
@@ -82,8 +95,16 @@ int main(int argc, char *argv[])
   if (DEBUG) {
     trace(delimiter);
     trace(limit);
-    trace(logging);
+    trace(log_mode);
+    if (log_mode) trace(log_I);
     trace(restargs);
+    trace(POOL_SIZE);
+    trace(BOOK_SIZE);
+  }
+
+  if (log_mode) {
+    log << "POOL_SIZE=" << POOL_SIZE << endl;
+    log << "BOOK_SIZE=" << BOOK_SIZE << endl;
   }
 
   /*
@@ -92,16 +113,19 @@ int main(int argc, char *argv[])
   vector<Text> doc;
   if (restargs.size() > 0) {
     cerr << "scan from text:" << restargs[0] << " ... ";
+    if (log_mode) log << "scan from text:" << restargs[0] << endl;
     ifstream sin(restargs[0]);
     for (Text t; t = read_text(sin, delimiter, 2), sin;) doc.push_back(t);
   } else {
     // cin
     cerr << "scan from stdin" << " ... ";
+    if (log_mode) log << "scan from stdin" << endl;
     for (Text t; t = read_text(cin, delimiter, 2), cin;) doc.push_back(t);
   }
   cerr << "finished." << endl;
 
   if (DEBUG) trace(doc.size());
+  if (log_mode) log << "doc.size = " << doc.size() << endl;
 
   /*
    * streaming inference
@@ -120,11 +144,12 @@ int main(int argc, char *argv[])
   const size_t T = doc.size();
   for (size_t time = 0; time < T; ++time)
   {
+    bool logging = log_mode and ( (time < log_I) or ((T - time) < log_I) );
+
     Text&t = doc[time];
 
     cerr << "\rtime=" << time;
     if (logging) {
-      log << "---" << endl;
       log << "#-- time=" << time << " : " << t << endl;
       log << endl;
     }
@@ -132,7 +157,7 @@ int main(int argc, char *argv[])
     // exists? a pattern `p` s.t. `t <= p`
     int idx = -1;
     {
-      int mf = t.size();
+      int mf = t.size() + 2;
       for (size_t j = 0; j < book.size(); ++j) {
         if (preceq(t, get<0>(book[j]))) {
           int f = count_filling(t, get<0>(book[j]));
@@ -155,7 +180,6 @@ int main(int argc, char *argv[])
       int m = get<1>(book[idx]).size();
       if (m > BOOK_SIZE and (not is_text(get<0>(book[idx]))))
       {
-        if (logging) log << "* div book[" << idx << "]" << endl;
         auto&p = get<0>(book[idx]);
         auto&C = get<1>(book[idx]);
         auto c = iota(C.size());
@@ -166,13 +190,13 @@ int main(int argc, char *argv[])
         if (ok) {
           ok = false;
           for (size_t i = 0; i < div.size(); ++i) {
-            if (get<2>(div[i]).size() > 1) ok = true;
+            if (get<2>(div[i]).size() >= GOOD_COVERING_FROM_BOOK) ok = true;
           }
         }
 
         if (logging) {
           log << endl;
-          log << "div of book[" << idx << "]" << endl;
+          log << "* div of book[" << idx << "] {{{" << endl;
           for (int i = 0; i < get<1>(book[idx]).size(); ++i)
             log << i << ". " << *(get<1>(book[idx])[i]) << endl;
           log << "div result" << endl;
@@ -180,6 +204,7 @@ int main(int argc, char *argv[])
             log << i << ". " << (get<0>(div[i])) << " (" << (get<1>(div[i]).size()) << ')' << endl;
           }
           log << "* div_success=" << ok << endl;
+          log << "}}}" << endl;
           log << endl;
         }
 
@@ -188,7 +213,7 @@ int main(int argc, char *argv[])
           for (size_t j = 0; j < div.size(); ++j) {
             auto&p = get<0>(div[j]);
             auto&C = get<1>(div[j]);
-            if (C.size() > 1) {
+            if (C.size() >= GOOD_COVERING_FROM_BOOK) {
               int uplen = 0;
               for (auto&t: C) uplen = max<int>(uplen, t->size());
               book.push_back(make_tuple(p, C, uplen));
@@ -205,41 +230,65 @@ int main(int argc, char *argv[])
       if (logging) log << "# put into pool" << endl;
       pool.push_back(&doc[time]);
 
-      if (pool.size() > POOL_SIZE
-          and pool.size()%5==0) // どうせあんま変わらんて
+      if (pool.size() % 5 == 0) // ちょっとずるいけど、どうせ変わらん
       {
-        if (logging) log << "* learning from pool" << endl;
 
-        for (size_t j = 0; j < POOL_SIZE; ++j) {
-          textbook[j] = pool[j];
-        }
-        for (size_t j = POOL_SIZE; j < pool.size() - 1; ++j) {
-          int k = rand() % j;
-          if (k < POOL_SIZE) textbook[k] = pool[j];
-        }
-        textbook[POOL_SIZE-1] = pool[pool.size()-1];
+        int cx = 0;
+        while (cx < 5 and pool.size() > POOL_SIZE) {
 
-        auto result = kmmg(POOL_SIZE *2/3, textbook, false);
-
-        vector<int> learned; // indices on pool
-        for (size_t j = 0; j < result.size(); ++j) {
-          auto&p = get<0>(result[j]);
-          auto&C = get<1>(result[j]);
-          auto&c = get<2>(result[j]);
-          if (c.size() <= 1) continue;
-          bool flg = false;
-          for (size_t k = 0; k < book.size(); ++k) {
-            if (preceq(get<0>(book[k]), p)) { flg=true; break; }
+          for (size_t j = 0; j < POOL_SIZE; ++j) {
+            textbook[j] = pool[j];
           }
-          if (flg) continue;
-          int uplen = 0;
-          for (auto&t: C) uplen = max<int>(uplen, t->size());
-          book.push_back(make_tuple(p, C, uplen));
-          for (int idx: c) learned.push_back(idx);
-        }
-        { // erase learned texts
-          sort(begin(learned), end(learned), std::greater<int>());
-          for (int idx: learned) pool.erase(begin(pool) + idx);
+          for (size_t j = POOL_SIZE; j < pool.size() - 1; ++j) {
+            int k = rand() % j;
+            if (k < POOL_SIZE) textbook[k] = pool[j];
+          }
+          textbook[POOL_SIZE-1] = pool[pool.size()-1];
+
+          auto result = kmmg(POOL_SIZE *2/3, textbook, false);
+
+          vector<int> learned; // indices on pool
+          for (size_t j = 0; j < result.size(); ++j) {
+            auto&p = get<0>(result[j]);
+            auto&C = get<1>(result[j]);
+            auto&c = get<2>(result[j]);
+            if (c.size() < GOOD_COVERING_FROM_POOL) continue;
+            bool flg = false;
+            for (size_t k = 0; k < book.size(); ++k) {
+              if (preceq(get<0>(book[k]), p)) { flg=true; break; }
+            }
+            if (flg) continue;
+            int uplen = 0;
+            for (auto&t: C) uplen = max<int>(uplen, t->size());
+            book.push_back(make_tuple(p, C, uplen));
+            for (int idx: c) learned.push_back(idx);
+          }
+
+          bool learned_success = learned.size() > 0;
+
+          if (logging) {
+            log << endl;
+            log << "* learning from pool:" << (learned_success ? "success" : "failed") << " {{{" << endl;
+            log << "** textbook" << endl;
+            for (int i = 0; i < textbook.size(); ++i)
+              log << i << ". " << *(textbook[i]) << endl;
+            log << "** kmmg result" << endl;
+            for (int i = 0; i < result.size(); ++i) {
+              log << i << ". " << (get<0>(result[i])) << " (" << (get<1>(result[i]).size()) << ')' << endl;
+            }
+            log << "}}}" << endl;
+            log << endl;
+          }
+
+          if (learned_success) {
+            // erase learned texts
+            sort(begin(learned), end(learned), std::greater<int>());
+            for (int idx: learned) pool.erase(begin(pool) + idx);
+            cx = 0;
+          } else {
+            ++cx;
+          }
+
         }
       }
     }
@@ -247,7 +296,7 @@ int main(int argc, char *argv[])
     if (logging) {
       log << "## book:" << book.size() << " {{{" << endl;
       for (size_t j = 0; j < book.size(); ++j) {
-        log << "  " << (j+1) << ". "
+        log << "  " << j << ". "
           << get<0>(book[j])
           << " (" << get<1>(book[j]).size()
           << ", " << get<2>(book[j])
@@ -255,9 +304,11 @@ int main(int argc, char *argv[])
       }
       log << "}}}" << endl;
       log << "## pool:" << pool.size() << " {{{" << endl;
+      /*
       for (size_t j = 0; j < pool.size(); ++j) {
-        log << "  " << (j+1) << ". " << *(pool[j]) << endl;
+        log << "  " << j << ". " << *(pool[j]) << endl;
       }
+      */
       log << "}}}" << endl;
       log << endl;
     }
@@ -265,11 +316,12 @@ int main(int argc, char *argv[])
   } // end of time
   cerr << endl;
 
-  cout << "#book" << endl;
+  cout << "# book" << endl;
   for (size_t j = 0; j < book.size(); ++j) {
     cout << get<0>(book[j]) << endl;
   }
-  cout << "#pool" << endl;
+  cout << endl;
+  cout << "# pool" << endl;
   for (size_t j = 0; j < pool.size(); ++j) {
     cout << *(pool[j]) << endl;
   }
