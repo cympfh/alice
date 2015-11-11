@@ -11,6 +11,26 @@ using namespace std;
 #include "./minl.h"
 #include "./util.h"
 
+vector<tuple<Pattern, vector<Text*>, int>> *book_ptr = nullptr;
+vector<Text*> *pool_ptr = nullptr;
+
+void sig_handler(int signo)
+{
+  if (signo != SIGINT) return;
+  if (book_ptr == nullptr) return;
+  cout << "# book" << endl;
+  auto&book = *book_ptr;
+  for (size_t i = 0; i < book.size(); ++i) {
+    cout << get<0>(book[i]) << endl;
+  }
+  cout << "# pool" << endl;
+  auto&pool = *pool_ptr;
+  for (size_t i = 0; i < pool.size(); ++i) {
+    cout << *pool[i] << endl;
+  }
+  exit(0);
+}
+
 void usage() {
   cerr << "Usage: alice [options] [file]" << endl;
   cerr << "  if file not specified, stdin will be read" << endl;
@@ -31,6 +51,10 @@ int main(int argc, char *argv[])
 
   random_device dev;
   mt19937 rand(dev());
+
+  if (signal(SIGINT, sig_handler) == SIG_ERR) {
+    fprintf(stderr, "\ncan't catch SIGINT\n");
+  }
 
   /*
    * parse cmdline
@@ -134,12 +158,13 @@ int main(int argc, char *argv[])
   // collection of (Pattern, covering, up-length-in-covering)
   // (パターン、被覆集合、被覆集合における最長)
   vector<tuple<Pattern, vector<Text*>, int>> book;
-
   // collection of Text-s not yet learned
   // 学習できていないテキスト
   vector<Text*> pool;
-
-  vector<Text*> textbook(POOL_SIZE); // pool から選んできて kmmg に投げる用
+  // pool からのランダムサンプリング用
+  vector<Text*> textbook(POOL_SIZE);
+  book_ptr = &book;
+  pool_ptr = &pool;
 
   const size_t T = doc.size();
   for (size_t time = 0; time < T; ++time)
@@ -320,7 +345,6 @@ int main(int argc, char *argv[])
   for (size_t j = 0; j < book.size(); ++j) {
     cout << get<0>(book[j]) << endl;
   }
-  cout << endl;
   cout << "# pool" << endl;
   for (size_t j = 0; j < pool.size(); ++j) {
     cout << *(pool[j]) << endl;
