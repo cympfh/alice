@@ -139,12 +139,12 @@ int main(int argc, char *argv[])
     cerr << "scan from text:" << restargs[0] << " ... ";
     if (log_mode) log << "scan from text:" << restargs[0] << endl;
     ifstream sin(restargs[0]);
-    for (Text t; t = read_text(sin, delimiter, 2), sin;) doc.push_back(t);
+    for (Text t; t = read_text(sin), sin;) doc.push_back(t);
   } else {
     // cin
     cerr << "scan from stdin" << " ... ";
     if (log_mode) log << "scan from stdin" << endl;
-    for (Text t; t = read_text(cin, delimiter, 2), cin;) doc.push_back(t);
+    for (Text t; t = read_text(cin), cin;) doc.push_back(t);
   }
   cerr << "finished." << endl;
 
