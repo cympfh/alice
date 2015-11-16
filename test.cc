@@ -10,6 +10,10 @@ using namespace std;
 #include "./minl.h"
 #include "./util.h"
 
+void message(const string&msg) {
+  cerr << "* \e[33mtest[\e[0m" << msg << "\e[33m] passed.\e[0m" << endl;
+}
+
 int main() {
   /*
    * text <= pattern
@@ -57,7 +61,8 @@ int main() {
 
   clock_t a,b;
   a = clock();
-  rep (_, 100)
+  const int M = 1e6;
+  rep (_, M)
   {
     Text t = {
       Alphabet("A", "a"), Alphabet("B", "b"),
@@ -86,7 +91,9 @@ int main() {
 
   }
   b = clock();
-  cerr << "prec(Text, Pattern) : clock=" << (b-a) << endl;
+  fprintf(stderr, "prec(Text, Pattern), %d times = %f sec\n",
+      M, double(b-a)/CLOCKS_PER_SEC);
+  message("text <= pattern");
 
   /*
    * pattern <= pattern
@@ -113,4 +120,5 @@ int main() {
     assert(not preceq(q, r));
     assert(not preceq(r, q));
   }
+  message("pattern <= pattern");
 }

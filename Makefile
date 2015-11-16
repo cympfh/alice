@@ -19,12 +19,11 @@ profile:
 	head -n 200 ~/Corpus/abstracts/train-sentences/CONCLUSION.pos | ./a.out -D >/dev/null
 	gprof a.out gmon.out | less
 
+.PHONY: test clean
+
 test: test.cc read.o ges.o pattern.o text.o setcover.o minl.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 	./test
-
-
-.PHONY: clean
 
 clean:
 	rm *.out *.log alice test
