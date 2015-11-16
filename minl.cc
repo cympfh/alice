@@ -55,6 +55,7 @@ tighten_begin:
 
   // <> -> <A>
   for (const string& pos: poss) {
+    if (pos == "CD") continue;
     for (size_t i = 0; i < n; ++i) {
       if (q[i].t != VAR) continue;
       q[i].t = POS;
@@ -111,6 +112,7 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
 
   // <A> -> a/A
   for (const string& pos: poss) {
+    if (pos == "CD") continue;
     for (size_t i = 0; i < n; ++i) {
       if (q[i].t != POS or q[i].pos != pos) continue;
       q[i].t = WORD;
