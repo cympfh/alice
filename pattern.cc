@@ -1,36 +1,23 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-enum PUnitType {
-  VAR = 0, POS, WORD
-};
+#include "pattern.h"
 
-struct PUnit
-{
-  PUnitType t;
-  string pos, word;
-
-  PUnit() : t(VAR) {}
-  PUnit(string p) : t(POS), pos(p) {}
-  PUnit(string p, string w) : t(WORD), pos(p), word(w) {}
-
-  bool operator!=(PUnit&rh) {
-    if (this-> t != rh.t) return true;
-    switch (this->t) {
-      case VAR:
-        return false;
-      case POS:
-        return this->pos != rh.pos;
-      case WORD:
-        return this->word != rh.word;
-    }
+bool operator!=(const PUnit&a, const PUnit&b) {
+  if (a.t != b.t) return true;
+  switch (a.t) {
+    case VAR:
+      return false;
+    case POS:
+      return a.pos != b.pos;
+    case WORD:
+      return a.word != b.word;
   }
+}
 
-  bool operator==(PUnit&rh) {
-    return not (*this == rh);
-  }
-
-};
+bool operator==(const PUnit&a, const PUnit&b) {
+  return not (a != b);
+}
 
 bool operator<(const PUnit&rl, const PUnit&rh) {
   switch (rl.t) {
@@ -60,7 +47,6 @@ std::ostream& operator<<(std::ostream&os, const PUnit&r) {
   }
 }
 
-using Pattern = vector<PUnit>;
 bool is_text(const Pattern&p) {
   for (size_t i = 0; i < p.size(); ++i) if (p[i].t != WORD) return false;
   return true;
