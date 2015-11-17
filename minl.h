@@ -1,3 +1,5 @@
+Pattern tighten(const Pattern&p, const vector<Text*>&C);
+
 vector< tuple<Pattern, vector<Text*>, vector<int>> >
 kdivision(
     int k,

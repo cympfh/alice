@@ -101,7 +101,6 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
 
   const int n = p.size();
   Pattern q = p;
-  Pattern r;
   vector<tuple<Pattern, vector<Text*>, vector<int>> > ret;
 
   map<string, vector<string>> dict; // dict[pos] = { word }
@@ -128,7 +127,43 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
     }
   }
 
+  // <> -> <> <A>
+  for (const string&pos: poss) {
+    q.resize(n+1);
+    for (size_t i = 0; i < n; ++i) {
+      q[i] = p[i];
+      if (p[i].t == VAR) {
+        q[i+1] = PUnit(pos);
+        for (int j = i+1; j < n; ++j) q[j+1] = p[j];
+        auto Ss = coverset(q, C, c);
+        assert(Ss.second.size() <= C.size() && "<> -> <> <A>");
+        if (Ss.second.size() > 0) {
+          ret.push_back(make_tuple(q, Ss.first, Ss.second));
+        }
+      }
+    }
+  }
+
+  // <> -> <A> <>
+  for (const string&pos: poss) {
+    for (size_t i = 0; i < n; ++i) {
+      q[i] = p[i];
+      if (p[i].t == VAR and (i == 0 or p[i-1].t != VAR)) {
+        q[i+1] = PUnit();
+        q[i] = PUnit(pos);
+        for (int j = i+1; j < n; ++j) q[j+1] = p[j];
+        auto Ss = coverset(q, C, c);
+        assert(Ss.second.size() <= C.size() && "<> -> <A> <>");
+        if (Ss.second.size() > 0) {
+          ret.push_back(make_tuple(q, Ss.first, Ss.second));
+        }
+      }
+    }
+  }
+
   // <> -> <A>
+  q.resize(n);
+  q = p;
   for (const string& pos: poss) {
     for (size_t i = 0; i < n; ++i) {
       if (q[i].t != VAR) continue;
@@ -144,16 +179,16 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
   }
 
   // <> -> <> <>
-  r = Pattern(n+1);
+  q.resize(n+1);
   for (size_t i = 0; i < n; ++i) {
-    r[i] = q[i];
-    if (r[i].t == VAR && (i == 0 or r[i-1].t != VAR)) {
-      r[i+1] = PUnit();
-      for (int j = i + 1; j < n; ++j) r[j+1] = q[j];
-      auto Ss = coverset(r, C, c);
+    q[i] = p[i];
+    if (p[i].t == VAR && (i == 0 or p[i-1].t != VAR)) {
+      q[i+1] = PUnit();
+      for (int j = i + 1; j < n; ++j) q[j+1] = p[j];
+      auto Ss = coverset(q, C, c);
       assert(Ss.second.size() <= C.size() && "<> -> <> <>");
       if (Ss.second.size() > 0) {
-        ret.push_back(make_tuple(r, Ss.first, Ss.second));
+        ret.push_back(make_tuple(q, Ss.first, Ss.second));
       }
     }
   }
@@ -175,6 +210,9 @@ kdivision(
     const vector<int>&s,
     bool DEBUG)
 {
+  if (DEBUG) {
+    cerr << "* k-division of " << make_pair(k,p) << endl;
+  }
   if (is_text(p)) { // not divisible clearly
     if (DEBUG) {{{ cerr   <<   "* not divisible clearly: " << p << endl; }}}
     return {make_tuple(p, S, s)};
