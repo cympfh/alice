@@ -31,7 +31,7 @@ coverset(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
   for (size_t i = 0; i < c.size(); ++i) {
     if (preceq(*C[i], p)) {
       S.push_back(C[i]);
-      s.push_back(i);
+      s.push_back(c[i]);
     }
   }
   return make_pair(S, s);
@@ -211,7 +211,7 @@ kdivision(
     bool DEBUG)
 {
   if (DEBUG) {
-    cerr << "* k-division of " << make_pair(k,p) << endl;
+    cerr << "* k-division of " << p << " k=" << k << " for (" << s.size() << "; " << s << ")" << endl;
   }
   if (is_text(p)) { // not divisible clearly
     if (DEBUG) {{{ cerr   <<   "* not divisible clearly: " << p << endl; }}}
@@ -224,10 +224,17 @@ kdivision(
   if (DEBUG) {{{
     cerr << "* cspc:" << ps.size() << endl;
     cerr << "{{{" << endl;
-    for (size_t i = 0; i < min<size_t>(20, ps.size()); ++i) {
-      cerr << i << ". " << get<0>(ps[i]) << " (" << get<1>(ps[i]).size() << ')' << endl;
+    for (size_t i = 0; i < 10; ++i) {
+      if (i >= ps.size()) continue;
+      cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]) << ')' << endl;
     }
-    if (20 < ps.size()) cerr << " : (omitted)" << endl;
+    if (ps.size() > 20) {
+      cerr << " : (omitted)" << endl;
+    }
+    for (size_t i = ps.size() - 10; i < ps.size(); ++i) {
+      if (i < 10) continue;
+      cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]) << ')' << endl;
+    }
     cerr << "}}}" << endl;
   }}}
 
