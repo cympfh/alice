@@ -3,12 +3,11 @@ using namespace std;
 #include "./pattern.h"
 #include "./text.h"
 
-pair<string, string> split(const string&s) {
+pair<string, string> split(const string&s, char d) {
   string w, p;
   const int n = s.size();
   int i;
-  for (i = n - 1; i >= 0; --i) if (s[i] == '_') break;
-  if (i == -1) for (i = n - 1; i >= 0; --i) if (s[i] == '/') break;
+  for (i = n - 1; i >= 0; --i) if (s[i] == d) break;
   if (i <= 0) { return make_pair(s, s); }
   w = s.substr(0, i);
   p = s.substr(i+1, 2);
@@ -35,13 +34,13 @@ Pattern read_pattern(istream&is, const char&d, int up_pos_len) {
 }
 */
 
-Text read_text(istream&is) {
+Text read_text(istream&is, char d) {
   vector<Alphabet> as;
   string line; getline(is, line);
   stringstream ss(line);
   string s;
   while (ss >> s) {
-    auto wp = split(s);
+    auto wp = split(s, d);
     as.push_back(Alphabet(wp.second, wp.first));
   }
   Text t;
