@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
 
         if (logging) {
           log << endl;
-          log << "* div of book[" << idx << "] {{{" << endl;
+          log << "* div of book[" << idx << "] (" << get<0>(book[idx]) << ") {{{" << endl;
           for (int i = 0; i < get<1>(book[idx]).size(); ++i)
             log << i << ". " << *(get<1>(book[idx])[i]) << endl;
           log << "div result" << endl;
