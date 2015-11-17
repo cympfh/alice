@@ -383,6 +383,7 @@ int main(int argc, char *argv[])
 
   cout << "# book" << endl;
   for (size_t j = 0; j < book.size(); ++j) {
+    if (get<1>(book[j]).size() == 0) continue;
     cout << get<0>(book[j]) << endl;
   }
   cout << "# pool" << endl;
