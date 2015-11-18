@@ -14,20 +14,30 @@ using namespace std;
 
 vector<tuple<Pattern, vector<Text*>, int>> *book_ptr = nullptr;
 vector<Text*> *pool_ptr = nullptr;
+bool BOOK_ONLY = false;
+bool FREQ_OUTPUT = false;
 
 void sig_handler(int signo)
 {
   if (signo != SIGINT) return;
   if (book_ptr == nullptr) return;
-  cout << "# book" << endl;
-  auto&book = *book_ptr;
-  for (size_t i = 0; i < book.size(); ++i) {
-    cout << get<0>(book[i]) << endl;
+  auto book = *book_ptr;
+  auto pool = *pool_ptr;
+  if (not BOOK_ONLY) {
+    cout << "# book" << endl;
   }
-  cout << "# pool" << endl;
-  auto&pool = *pool_ptr;
-  for (size_t i = 0; i < pool.size(); ++i) {
-    cout << *pool[i] << endl;
+  {
+    for (size_t j = 0; j < book.size(); ++j) {
+      if (get<1>(book[j]).size() == 0) continue;
+      if (FREQ_OUTPUT) cout << get<1>(book[j]).size() << ' ';
+      cout << get<0>(book[j]) << endl;
+    }
+  }
+  if (not BOOK_ONLY) {
+    cout << "# pool" << endl;
+    for (size_t j = 0; j < pool.size(); ++j) {
+      cout << *(pool[j]) << endl;
+    }
   }
   exit(0);
 }
@@ -42,6 +52,8 @@ void usage() {
   cerr << "  -P, --pool-size <int>              maximum pool size (= 20)" << endl;
   cerr << "  -B, --book-size <int>              maximum size of a book (= 5)" << endl;
   cerr << "  -L, --log <filename=>              output logfile" << endl;
+  cerr << "  --book-only                        output only book patterns" << endl;
+  cerr << "  --frequency                        output frequency of each pattern before it" << endl;
   cerr << "  -I  <int>                          only when (time < I) or (T - time < I) (= T)" << endl;
   cerr << "  -D, --debug                        debug mode" << endl;
   cerr << "  -?, --help                         it is this" << endl;
@@ -117,6 +129,12 @@ int main(int argc, char *argv[])
       log_I = atoi(argv[i+1]);
       ++i;
     }
+    else if (arg == "--book-only") {
+      BOOK_ONLY = true;
+    }
+    else if (arg == "--freq" or arg == "--frequency") {
+      FREQ_OUTPUT = true;
+    }
     else if (arg == "-D" or arg == "--debug") {
       DEBUG = true;
     }
@@ -190,8 +208,9 @@ int main(int argc, char *argv[])
   /*
    * Patterns from frequency n-gram
    */
+  cerr << "scan n-gram ... ";
   {
-    auto result = ngram({ 2, 3 }, doc);
+    auto result = ngram({ 2, 3, 4, 5 }, doc);
     int M = result.size();
     for (int i = NGRAM_FROM; i < NGRAM_TO; ++i) {
       if (i < 0 or i >= M) continue;
@@ -209,10 +228,14 @@ int main(int argc, char *argv[])
       }
     }
   }
+  cerr << "finished." << endl;
 
   /*
    * streaming inference
    */
+
+  int count_booking = 0;
+  int count_pooling = 0;
 
   const size_t T = doc.size();
   for (size_t time = 0; time < T; ++time)
@@ -246,6 +269,7 @@ int main(int argc, char *argv[])
     {
       // put into book
       if (logging) log << "# put into book" << endl;
+      count_booking++;
       get<1>(book[idx]).push_back(&doc[time]);
       get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
 
@@ -257,7 +281,9 @@ int main(int argc, char *argv[])
         auto&C = get<1>(book[idx]);
         auto c = iota(C.size());
 
-        p = tighten(p, C);
+        if (get<2>(book[idx]) == 0) { // is a pattern from n-gram?
+          p = tighten(p, C);
+        }
         auto div = kdivision(C.size(),p,C,c, false);
         bool ok = div.size() >= 2;
 
@@ -302,12 +328,12 @@ int main(int argc, char *argv[])
     {
       // put into pool
       if (logging) log << "# put into pool" << endl;
+      count_pooling++;
       pool.push_back(&doc[time]);
 
       if (pool.size() % 5 == 0) // ちょっとずるいけど、どうせ変わらん
       {
-
-        int cx = 0;
+        int cx = 0; // 5回連続で失敗したら失敗にする
         while (cx < 5 and pool.size() > POOL_SIZE) {
 
           for (size_t j = 0; j < POOL_SIZE; ++j) {
@@ -319,7 +345,7 @@ int main(int argc, char *argv[])
           }
           textbook[POOL_SIZE-1] = pool[pool.size()-1];
 
-          auto result = kmmg(POOL_SIZE *2/3, textbook, false);
+          auto result = kmmg(POOL_SIZE *1/4, textbook, false);
 
           vector<int> learned; // indices on pool
           for (size_t j = 0; j < result.size(); ++j) {
@@ -390,14 +416,26 @@ int main(int argc, char *argv[])
   } // end of time
   cerr << endl;
 
-  cout << "# book" << endl;
-  for (size_t j = 0; j < book.size(); ++j) {
-    if (get<1>(book[j]).size() == 0) continue;
-    cout << get<0>(book[j]) << endl;
+  if (log_mode) {
+    log << "the count of booking = " << count_booking << endl;
+    log << "the count of pooling = " << count_pooling << endl;
   }
-  cout << "# pool" << endl;
-  for (size_t j = 0; j < pool.size(); ++j) {
-    cout << *(pool[j]) << endl;
+
+  if (not BOOK_ONLY) {
+    cout << "# book" << endl;
+  }
+  {
+    for (size_t j = 0; j < book.size(); ++j) {
+      if (get<1>(book[j]).size() == 0) continue;
+      if (FREQ_OUTPUT) cout << get<1>(book[j]).size() << ' ';
+      cout << get<0>(book[j]) << endl;
+    }
+  }
+  if (not BOOK_ONLY) {
+    cout << "# pool" << endl;
+    for (size_t j = 0; j < pool.size(); ++j) {
+      cout << *(pool[j]) << endl;
+    }
   }
 
   return 0;

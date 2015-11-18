@@ -46,11 +46,13 @@ Text read_text(istream&is, char d) {
   Text t;
   for (size_t i = 0; i < as.size(); ++i) {
     auto&a = as[i];
+    /*
     int n = t.size();
     if (n > 0 and t[n-1].pos == a.pos) {
       t[n-1].word += '\t' + a.word;
       continue;
     }
+    */
     t.push_back(a);
   }
   return t;
