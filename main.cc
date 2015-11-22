@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
     if (idx >= 0) // exists `p` (t <= p) in book
     {
       // put into book
-      if (logging) log << "# put into book" << endl;
+      if (logging) log << "# put into book[" << idx << "]" << endl;
       count_booking++;
       get<1>(book[idx]).push_back(&doc[time]);
       get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
@@ -282,7 +282,9 @@ int main(int argc, char *argv[])
         auto c = iota(C.size());
 
         if (get<2>(book[idx]) == 0) { // is a pattern from n-gram?
+          if (log_mode) log << p << " -> ";
           p = tighten(p, C);
+          if (log_mode) log << p << endl;
         }
         auto div = kdivision(C.size(),p,C,c, false);
         bool ok = div.size() >= 2;
