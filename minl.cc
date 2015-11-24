@@ -225,11 +225,6 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
     }
   }
 
-  // tighten all
-  for (size_t i = 0; i < ret.size(); ++i) {
-    get<0>(ret[i]) = tighten(get<0>(ret[i]), get<1>(ret[i]));
-  }
-
   return ret;
 }
 
