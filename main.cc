@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
           assert(get<2>(book[idx]) < inf);
         }
 
-        auto div = kdivision(C.size(),p,C,c, false);
+        auto div = kdivision(C.size(), p, C, c);
         bool ok = div.size() >= 2;
 
         if (ok) {

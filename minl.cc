@@ -100,7 +100,6 @@ tighten_begin:
 
   // <> -> <A>
   for (const string& pos: poss) {
-    if (pos == "CD") continue;
     for (size_t i = 0; i < n; ++i) {
       if (q[i].t != VAR) continue;
       q[i].t = POS;
@@ -143,7 +142,6 @@ cspc(const Pattern&p, const vector<Text*>&C, const vector<int>&c) {
 
   // <A> -> a/A
   for (const string& pos: poss) {
-    if (pos == "CD") continue;
     for (size_t i = 0; i < n; ++i) {
       if (q[i].t != POS or q[i].pos != pos) continue;
       q[i].t = WORD;
@@ -249,18 +247,24 @@ kdivision(
   ps = cspc(p, S, s);
 
   if (DEBUG) {{{
+    const int NN=200;
     cerr << "* cspc:" << ps.size() << endl;
     cerr << "{{{" << endl;
-    for (size_t i = 0; i < 10; ++i) {
-      if (i >= ps.size()) continue;
-      cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]) << ')' << endl;
-    }
-    if (ps.size() > 20) {
-      cerr << " : (omitted)" << endl;
-    }
-    for (size_t i = ps.size() - 10; i < ps.size(); ++i) {
-      if (i < 10) continue;
-      cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]) << ')' << endl;
+    for (size_t i = 0; i < ps.size(); ++i) {
+      if (ps.size() > NN and NN/2 <= i and i < ps.size() - NN/2) {
+        if (i == NN/2) cerr << " : (omitted)" << endl;
+        else continue;
+      } else {
+        cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]).size() << "; " << get<2>(ps[i]) << ')';
+        /*
+        auto&C = get<1>(ps[i]);
+        int w = -1;
+        for (auto&t: C) w = max<int>(w, t->size());
+        w -= fixed_size(p);
+        cerr << "; w = " << w;
+        */
+        cerr << endl;
+      }
     }
     cerr << "}}}" << endl;
   }}}
@@ -272,13 +276,13 @@ kdivision(
   {{{
     vector<pair<set<int>, int>> ls(ps.size());
     for (size_t i = 0; i < ps.size(); ++i) {
-      int w = 1e9;
+      int w = -1;
       auto&p = get<0>(ps[i]);
       auto&C = get<1>(ps[i]);
       for (auto&t: C) w = max<int>(w, t->size());
       w -= fixed_size(p);
       set<int> s; for (int j: get<2>(ps[i])) s.insert(j);
-      ls[i] = { s, w };
+      ls[i] = { s, w*w };
     }
 
     set<int> sol;
