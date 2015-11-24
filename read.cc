@@ -14,8 +14,7 @@ pair<string, string> split(const string&s, char d) {
   return make_pair(w, p);
 }
 
-/*
-Pattern read_pattern(istream&is, const char&d, int up_pos_len) {
+Pattern read_pattern(istream&is, char d) {
   Pattern p;
   string line; getline(is, line);
   stringstream ss(line);
@@ -26,13 +25,12 @@ Pattern read_pattern(istream&is, const char&d, int up_pos_len) {
     } else if (s[0] == '<') {
       p.push_back(PUnit(s.substr(1, s.size()-2)));
     } else {
-      auto wp = split(s, d, up_pos_len);
+      auto wp = split(s, d);
       p.push_back(PUnit(wp.second, wp.first));
     }
   }
   return p;
 }
-*/
 
 Text read_text(istream&is, char d) {
   vector<Alphabet> as;

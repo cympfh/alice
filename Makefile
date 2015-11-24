@@ -1,10 +1,11 @@
 CXXFLAGS=-O3 -std=c++11
 
 mytest: alice
-	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.pos | head -n 3000 | ./alice -D -N 10:200 -P 50 -B 10 --book-only --freq -L test.log -I 300 >test.out
+	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 600 | ./alice -D --seed seeds/tfidf -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
 	cp test.log log/$$(date "+%m%d.%H%M.%S.log")
 
-alice: main.cc read.o ges.o pattern.o text.o setcover.o minl.o ngram.o
+OBJS=read.o ges.o pattern.o text.o setcover.o minl.o ngram.o
+alice: main.cc $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 minl.o: minl.cc util.h
@@ -16,13 +17,13 @@ text.o: text.cc
 ngram.o: ngram.cc text.o
 
 profile:
-	g++ -std=c++11 -pg read.o ges.o pattern.o text.o setcover.o minl.o main.cc
-	head -n 200 ~/Corpus/abstracts/train-sentences/CONCLUSION.pos | ./a.out -D >/dev/null
+	g++ -std=c++11 -pg main.cc $(OBJS)
+	head -n 100 ~/Corpus/abstracts/train-sentences/CONCLUSION.post | ./a.out -D >/dev/null
 	gprof a.out gmon.out | less
 
 .PHONY: test clean
 
-test: test.cc read.o ges.o pattern.o text.o setcover.o minl.o ngram.o
+test: test.cc $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 	./test
 

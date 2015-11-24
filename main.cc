@@ -3,6 +3,7 @@
 using namespace std;
 #define rep(i,n) for(int i=0;i<(n);++i)
 #define trace(var) cerr<<">>> "<<#var<<" = "<<var<<endl;
+const int inf = 1e9;
 
 #include "pattern.h"
 #include "text.h"
@@ -48,7 +49,7 @@ void usage() {
   cerr << "options:" << endl;
   cerr << "  -d, --delimiter                    delimiter character between word and POS in text" << endl;
   cerr << "  -l, --limit                        preserved option" << endl;
-  cerr << "  -N, --ngram-size [<int>:]<int>     the (inclusively) range of patterns by n-gram " << endl;
+  cerr << "  -S, --seed <filename=>             seed pattern" << endl;
   cerr << "  -P, --pool-size <int>              maximum pool size (= 20)" << endl;
   cerr << "  -B, --book-size <int>              maximum size of a book (= 5)" << endl;
   cerr << "  -L, --log <filename=>              output logfile" << endl;
@@ -80,10 +81,11 @@ int main(int argc, char *argv[])
   bool log_mode = false;
   ofstream log;
   int log_I = -1;
-  int NGRAM_FROM = -1;
-  int NGRAM_TO = -1;
+  // int NGRAM_FROM = -1;
+  // int NGRAM_TO = -1;
   int POOL_SIZE = 20;
   int BOOK_SIZE = 5;
+  string seedfile = "";
 
   int GOOD_COVERING_FROM_POOL = 2; // これ以上被覆してたら良いとする
   int GOOD_COVERING_FROM_BOOK = 3;
@@ -100,6 +102,7 @@ int main(int argc, char *argv[])
       limit = atof(argv[i+1]);
       ++i;
     }
+    /*
     else if (arg == "-N" or arg == "--ngram-size") {
       int k;
       for (k = 1; k < nextarg.size()-1; ++k) if (nextarg[k] == ':') break;
@@ -110,6 +113,11 @@ int main(int argc, char *argv[])
         NGRAM_FROM = 0;
         NGRAM_TO = atoi(argv[i+1]);
       }
+      ++i;
+    }
+    */
+    else if (arg == "-S" or arg == "--seed") {
+      seedfile = nextarg;
       ++i;
     }
     else if (arg == "-P" or arg == "--pool-size") {
@@ -156,9 +164,10 @@ int main(int argc, char *argv[])
     trace(log_mode);
     if (log_mode) trace(log_I);
     trace(restargs);
-    trace(make_pair(NGRAM_FROM, NGRAM_TO));
+    // trace(make_pair(NGRAM_FROM, NGRAM_TO));
     trace(POOL_SIZE);
     trace(BOOK_SIZE);
+    trace(seedfile);
   }
 
   if (log_mode) {
@@ -207,7 +216,6 @@ int main(int argc, char *argv[])
 
   /*
    * Patterns from frequency n-gram
-   */
   cerr << "scan n-gram ... ";
   {
     auto result = ngram({ 2, 3, 4, 5 }, doc);
@@ -229,6 +237,24 @@ int main(int argc, char *argv[])
     }
   }
   cerr << "finished." << endl;
+   */
+
+  /*
+   * Scan Seed Patterns
+   * and put into book
+   */
+  if (seedfile != "")
+  {
+    ifstream sin(seedfile);
+    int i = 0;
+    for (Pattern p; p = read_pattern(sin, '/'), sin; ) {
+      book.push_back(make_tuple(p, vector<Text*>(), inf));
+      ++i;
+    }
+    if (log_mode) {
+      log << i << " patterns specified as seeds" << endl;
+    }
+  }
 
   /*
    * streaming inference
@@ -281,11 +307,17 @@ int main(int argc, char *argv[])
         auto&C = get<1>(book[idx]);
         auto c = iota(C.size());
 
-        if (get<2>(book[idx]) == 0) { // is a pattern from n-gram?
+        // is seed pattern?
+        if (get<2>(book[idx]) == inf) {
           if (log_mode) log << p << " -> ";
           p = tighten(p, C);
           if (log_mode) log << p << endl;
+          int max_len = 0;
+          for (auto&t: C) max_len = max<int>(max_len, t->size());
+          get<2>(book[idx]) = max_len;
+          assert(get<2>(book[idx]) < inf);
         }
+
         auto div = kdivision(C.size(),p,C,c, false);
         bool ok = div.size() >= 2;
 
