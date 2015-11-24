@@ -81,8 +81,6 @@ int main(int argc, char *argv[])
   bool log_mode = false;
   ofstream log;
   int log_I = -1;
-  // int NGRAM_FROM = -1;
-  // int NGRAM_TO = -1;
   int POOL_SIZE = 20;
   int BOOK_SIZE = 5;
   string seedfile = "";
@@ -102,20 +100,6 @@ int main(int argc, char *argv[])
       limit = atof(argv[i+1]);
       ++i;
     }
-    /*
-    else if (arg == "-N" or arg == "--ngram-size") {
-      int k;
-      for (k = 1; k < nextarg.size()-1; ++k) if (nextarg[k] == ':') break;
-      if (nextarg[k] == ':') {
-        NGRAM_FROM = atoi(nextarg.substr(0, k).c_str());
-        NGRAM_TO = atoi(nextarg.substr(k+1).c_str());
-      } else {
-        NGRAM_FROM = 0;
-        NGRAM_TO = atoi(argv[i+1]);
-      }
-      ++i;
-    }
-    */
     else if (arg == "-S" or arg == "--seed") {
       seedfile = nextarg;
       ++i;
@@ -164,7 +148,6 @@ int main(int argc, char *argv[])
     trace(log_mode);
     if (log_mode) trace(log_I);
     trace(restargs);
-    // trace(make_pair(NGRAM_FROM, NGRAM_TO));
     trace(POOL_SIZE);
     trace(BOOK_SIZE);
     trace(seedfile);
@@ -213,31 +196,6 @@ int main(int argc, char *argv[])
 
   book_ptr = &book;
   pool_ptr = &pool;
-
-  /*
-   * Patterns from frequency n-gram
-  cerr << "scan n-gram ... ";
-  {
-    auto result = ngram({ 2, 3, 4, 5 }, doc);
-    int M = result.size();
-    for (int i = NGRAM_FROM; i < NGRAM_TO; ++i) {
-      if (i < 0 or i >= M) continue;
-      Gram&g = result[i].second;
-      Pattern p;
-      if (not get<0>(g)) p.push_back(PUnit()); // not __BOS__
-      for (Alphabet&a: get<2>(g)) p.push_back(PUnit(a.pos, a.word));
-      if (not get<1>(g)) p.push_back(PUnit()); // not __EOS__
-      book.push_back(make_tuple(p, vector<Text*>(), 0 ));
-    }
-    if (DEBUG) {
-      cerr << "# " << book.size() << " patterns given by n-gram" << endl;
-      for (size_t i = 0; i < book.size(); ++i) {
-        cerr << i << ". " << get<0>(book[i]) << endl;
-      }
-    }
-  }
-  cerr << "finished." << endl;
-   */
 
   /*
    * Scan Seed Patterns

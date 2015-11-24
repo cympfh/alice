@@ -1,7 +1,10 @@
 CXXFLAGS=-O3 -std=c++11
 
+SEED=../PubMed/alice/seeds/tfidf
 mytest: alice
-	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 600 | ./alice -D --seed seeds/tfidf -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
+	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D --seed $(SEED) -P 30 -B 8 --book-only --freq -L test.log -I 300 >test.out
+	cat ./mytest.base
+	cat ./test.out | sort -nr -k1,1 | sed 's/^[0-9]* //g' | ../PubMed/eval-alice/eval.exe ~/Corpus/abstracts/test-post.txt | tee -a test.log
 	cp test.log log/$$(date "+%m%d.%H%M.%S.log")
 
 OBJS=read.o ges.o pattern.o text.o setcover.o minl.o ngram.o

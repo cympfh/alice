@@ -1,0 +1,5 @@
+label            E[1/(1+f)]  #missing   #Doc
+BACKGROUND          0.04564      2550   2550
+METHOD              0.05001      3014   3014
+RESULT              0.04565      4219   4219
+CONCLUSION          0.04886      1983   1983
