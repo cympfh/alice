@@ -13,6 +13,9 @@ const int inf = 1e9;
 #include "ngram.h"
 #include "util.h"
 
+const int GOOD_COVERING_FROM_POOL = 2; // これ以上被覆してたら良いとする
+const int GOOD_COVERING_FROM_BOOK = 2;
+
 vector<tuple<Pattern, vector<Text*>, int>> *book_ptr = nullptr;
 vector<Text*> *pool_ptr = nullptr;
 bool BOOK_ONLY = false;
@@ -61,6 +64,84 @@ void usage() {
   exit(0);
 }
 
+/*
+ * book[idx] を division します
+ */
+void book_div(int idx, ostream*logptr, int BOOK_SIZE) {
+  assert(book_ptr != nullptr);
+  assert(pool_ptr != nullptr);
+  assert(idx >= 0);
+  auto&book = *book_ptr;
+  auto&pool = *pool_ptr;
+
+  if (is_text(get<0>(book[idx]))) return;
+
+  assert(idx < book.size());
+  bool logging = logptr != nullptr;
+  ostream&log = *logptr;
+
+  int cs = get<1>(book[idx]).size();
+  if (cs > BOOK_SIZE)
+  {
+    auto&p = get<0>(book[idx]);
+    auto&C = get<1>(book[idx]);
+    auto c = iota(C.size());
+
+    // is seed pattern?
+    if (get<2>(book[idx]) == inf) {
+      if (logging) log << p << " -> ";
+      p = tighten(p, C);
+      if (logging) log << p << endl;
+      int max_len = 0;
+      for (auto&t: C) max_len = max<int>(max_len, t->size());
+      get<2>(book[idx]) = max_len;
+    }
+
+    auto div = kdivision(C.size(), p, C, c, false);
+    bool ok = div.size() >= 2;
+
+    if (ok) {
+      ok = false;
+      for (size_t i = 0; i < div.size(); ++i) {
+        int cs = get<2>(div[i]).size();
+        // if (BOOK_SIZE >= cs and cs >= GOOD_COVERING_FROM_BOOK) ok = true;
+        if (cs >= GOOD_COVERING_FROM_BOOK) ok = true;
+      }
+    }
+
+    if (logging) {
+      log << endl;
+      log << "* div of book[" << idx << "] (" << get<0>(book[idx]) << ") {{{" << endl;
+      for (int i = 0; i < get<1>(book[idx]).size(); ++i)
+        log << i << ". " << *(get<1>(book[idx])[i]) << endl;
+      log << "div result" << endl;
+      for (int i = 0; i < div.size(); ++i) {
+        log << i << ". " << (get<0>(div[i])) << " (" << (get<1>(div[i]).size()) << ')' << endl;
+      }
+      log << "* div_success=" << ok << endl;
+      log << "}}}" << endl;
+      log << endl;
+    }
+
+    if (ok) {
+      book.erase(begin(book) + idx);
+      for (size_t j = 0; j < div.size(); ++j) {
+        auto&p = get<0>(div[j]);
+        auto&C = get<1>(div[j]);
+        int cs = C.size();
+        // if (BOOK_SIZE >= cs and cs >= GOOD_COVERING_FROM_BOOK) {
+        if (cs >= GOOD_COVERING_FROM_BOOK) {
+          int uplen = 0;
+          for (auto&t: C) uplen = max<int>(uplen, t->size());
+          book.push_back(make_tuple(p, C, uplen));
+        } else {
+          for (auto&t: C) pool.push_back(t);
+        }
+      }
+    }
+  }
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -82,11 +163,8 @@ int main(int argc, char *argv[])
   ofstream log;
   int log_I = -1;
   int POOL_SIZE = 20;
-  int BOOK_SIZE = 5;
+  int BOOK_SIZE = 20;
   string seedfile = "";
-
-  int GOOD_COVERING_FROM_POOL = 2; // これ以上被覆してたら良いとする
-  int GOOD_COVERING_FROM_BOOK = 3;
 
   vector<string> restargs;
   for (size_t i = 1; i < argc; ++i) {
@@ -215,11 +293,8 @@ int main(int argc, char *argv[])
   }
 
   /*
-   * streaming inference
+   * stream learning
    */
-
-  int count_booking = 0;
-  int count_pooling = 0;
 
   const size_t T = doc.size();
   for (size_t time = 0; time < T; ++time)
@@ -237,12 +312,12 @@ int main(int argc, char *argv[])
     // exists? a pattern `p` s.t. `t <= p`
     int idx = -1;
     {
-      int mf = t.size() + 2;
-      for (size_t j = 0; j < book.size(); ++j) {
+      int mx = 1e9; // filling に関する min を取る
+      for (int j = 0; j < book.size(); ++j) {
         if (preceq(t, get<0>(book[j]))) {
-          int f = count_filling(t, get<0>(book[j]));
-          if (f < mf) {
-            mf = f;
+          int cf = count_filling(t, get<0>(book[j]));
+          if (idx == -1 or mx > cf) {
+            mx = cf;
             idx = j;
           }
         }
@@ -253,74 +328,14 @@ int main(int argc, char *argv[])
     {
       // put into book
       if (logging) log << "# put into book[" << idx << "]" << endl;
-      count_booking++;
       get<1>(book[idx]).push_back(&doc[time]);
       get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
-
-      // divide
-      int m = get<1>(book[idx]).size();
-      if (m > BOOK_SIZE and (not is_text(get<0>(book[idx]))))
-      {
-        auto&p = get<0>(book[idx]);
-        auto&C = get<1>(book[idx]);
-        auto c = iota(C.size());
-
-        // is seed pattern?
-        if (get<2>(book[idx]) == inf) {
-          if (log_mode) log << p << " -> ";
-          p = tighten(p, C);
-          if (log_mode) log << p << endl;
-          int max_len = 0;
-          for (auto&t: C) max_len = max<int>(max_len, t->size());
-          get<2>(book[idx]) = max_len;
-          assert(get<2>(book[idx]) < inf);
-        }
-
-        auto div = kdivision(C.size(), p, C, c);
-        bool ok = div.size() >= 2;
-
-        if (ok) {
-          ok = false;
-          for (size_t i = 0; i < div.size(); ++i) {
-            if (get<2>(div[i]).size() >= GOOD_COVERING_FROM_BOOK) ok = true;
-          }
-        }
-
-        if (logging) {
-          log << endl;
-          log << "* div of book[" << idx << "] (" << get<0>(book[idx]) << ") {{{" << endl;
-          for (int i = 0; i < get<1>(book[idx]).size(); ++i)
-            log << i << ". " << *(get<1>(book[idx])[i]) << endl;
-          log << "div result" << endl;
-          for (int i = 0; i < div.size(); ++i) {
-            log << i << ". " << (get<0>(div[i])) << " (" << (get<1>(div[i]).size()) << ')' << endl;
-          }
-          log << "* div_success=" << ok << endl;
-          log << "}}}" << endl;
-          log << endl;
-        }
-
-        if (ok) {
-          book.erase(begin(book) + idx);
-          for (size_t j = 0; j < div.size(); ++j) {
-            auto&p = get<0>(div[j]);
-            auto&C = get<1>(div[j]);
-            if (C.size() >= GOOD_COVERING_FROM_BOOK) {
-              int uplen = 0;
-              for (auto&t: C) uplen = max<int>(uplen, t->size());
-              book.push_back(make_tuple(p, C, uplen));
-            } else {
-              for (auto&t: C) pool.push_back(t);
-            }
-          }
-        }
-      }
+      book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
     }
     else
     {
       // put into pool
       if (logging) log << "# put into pool" << endl;
-      count_pooling++;
       pool.push_back(&doc[time]);
 
       if (pool.size() % 5 == 0) // ちょっとずるいけど、どうせ変わらん
@@ -405,12 +420,38 @@ int main(int argc, char *argv[])
       log << endl;
     }
 
-  } // end of time
+    if (BOOK_SIZE > 2 and idx%50==0) {
+      BOOK_SIZE--;
+      if (logging) log << "BOOK_SIZE=" << BOOK_SIZE << endl;
+      for (size_t j = 0; j < book.size(); ++j) {
+        if (get<1>(book[j]).size() == BOOK_SIZE + 1) { // ギリギリはみ出した
+          book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
+        }
+      }
+    }
+
+  } // end of stream learning
   cerr << endl;
 
-  if (log_mode) {
-    log << "the count of booking = " << count_booking << endl;
-    log << "the count of pooling = " << count_pooling << endl;
+  for (size_t j = 0; j < book.size(); ++j) {
+    if (get<2>(book[j]) == inf and get<1>(book[j]).size() > 0)
+      get<0>(book[j]) = tighten(get<0>(book[j]), get<1>(book[j]));
+  }
+
+  if (log_mode)
+  {
+    log << endl;
+    log << "{{{" << endl;
+    int jj = 0;
+    for (size_t j = 0; j < book.size(); ++j) {
+      if (get<1>(book[j]).size() == 0) continue;
+      log << (jj++) << ". " << get<0>(book[j]) << endl;
+      for (size_t i = 0; i < get<1>(book[j]).size(); ++i) {
+        log << "  " << i << ". " << *(get<1>(book[j])[i]) << endl;
+      }
+      log << endl;
+    }
+    log << "}}}" << endl;
   }
 
   if (not BOOK_ONLY) {
