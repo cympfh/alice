@@ -1,6 +1,6 @@
 CXXFLAGS=-O3 -std=c++11
 
-SEED=../PubMed/alice/seeds/a
+SEED=../PubMed/alice/seeds/tfidf
 mytest: alice
 	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D --seed $(SEED) -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
 	cat ./mytest.base

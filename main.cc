@@ -310,30 +310,22 @@ int main(int argc, char *argv[])
     }
 
     // exists? a pattern `p` s.t. `t <= p`
-    int idx = -1;
+    vector<int> matching_indices;
     {
-      int mx = 1e9; // filling に関する min を取る
       for (int j = 0; j < book.size(); ++j) {
-        if (preceq(t, get<0>(book[j]))) {
-          int cf = count_filling(t, get<0>(book[j]));
-          if (idx == -1 or mx > cf) {
-            mx = cf;
-            idx = j;
-          }
-        }
+        if (preceq(t, get<0>(book[j]))) matching_indices.push_back(j);
       }
     }
 
-    if (idx >= 0) // exists `p` (t <= p) in book
-    {
+    if (not matching_indices.empty()) {
       // put into book
-      if (logging) log << "# put into book[" << idx << "]" << endl;
-      get<1>(book[idx]).push_back(&doc[time]);
-      get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
-      book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
-    }
-    else
-    {
+      for (int idx: matching_indices) {
+        if (logging) log << "# put into book[" << idx << "]" << endl;
+        get<1>(book[idx]).push_back(&doc[time]);
+        get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
+        book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
+      }
+    } else {
       // put into pool
       if (logging) log << "# put into pool" << endl;
       pool.push_back(&doc[time]);
