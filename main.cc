@@ -420,12 +420,12 @@ int main(int argc, char *argv[])
       log << endl;
     }
 
-    if (BOOK_SIZE > 2 and idx%50==0) {
+    if (BOOK_SIZE > 2 and time%50==0) {
       BOOK_SIZE--;
       if (logging) log << "BOOK_SIZE=" << BOOK_SIZE << endl;
       for (size_t j = 0; j < book.size(); ++j) {
         if (get<1>(book[j]).size() == BOOK_SIZE + 1) { // ギリギリはみ出した
-          book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
+          book_div(j, (logging ? &log : nullptr), BOOK_SIZE);
         }
       }
     }
