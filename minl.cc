@@ -158,85 +158,86 @@ namespace mmg {
     int n;
 
     map<string, vector<string>> dict; // dict[pos] = { word }
-  for (Text* t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
-  vector<string> poss = { "NN" };
-  for (auto&kv: dict) poss.push_back(kv.first);
+    for (Text* t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
+    vector<string> poss;
+    for (auto&kv: dict) poss.push_back(kv.first);
 
 tighten_begin:
-  if (is_text(q)) return q;
-  n = q.size();
+    if (is_text(q)) return q;
+    n = q.size();
 
-  // <A> -> a/A
-  for (const string& pos: poss) {
-    for (size_t i = 0; i < n; ++i) {
-      if (q[i].t != POS or q[i].pos != pos) continue;
-      q[i].t = WORD;
-      for (string&w: dict[q[i].pos]) {
-        q[i].word = w;
-        if (language_include(q, C)) goto tighten_begin;
+    // <A> -> a/A
+    for (const string& pos: poss) {
+      for (size_t i = 0; i < n; ++i) {
+        if (q[i].t != POS or q[i].pos != pos) continue;
+        q[i].t = WORD;
+        for (string&w: dict[q[i].pos]) {
+          q[i].word = w;
+          if (language_include(q, C)) goto tighten_begin;
+        }
+        q[i].t = POS;
       }
-      q[i].t = POS;
     }
-  }
 
-  // <> -> <> <A>
-  for (const string&pos: poss) {
+    // <> -> <> <A>
+    r.resize(n+1);
+    for (const string&pos: poss) {
+      for (size_t i = 0; i < n; ++i) {
+        r[i] = q[i];
+        if (q[i].t == VAR) {
+          r[i+1] = PUnit(pos);
+          for (int j = i+1; j < n; ++j) r[j+1] = q[j];
+          if (language_include(r, C)) {
+            q = r;
+            goto tighten_begin;
+          }
+        }
+      }
+    }
+
+    // <> -> <A> <>
+    r.resize(n+1);
+    for (const string&pos: poss) {
+      for (size_t i = 0; i < n; ++i) {
+        r[i] = q[i];
+        if (q[i].t == VAR and (i == 0 or q[i-1].t != VAR)) {
+          r[i] = PUnit(pos);
+          r[i+1] = PUnit();
+          for (int j = i+1; j < n; ++j) r[j+1] = q[j];
+          if (language_include(r, C)) {
+            q = r;
+            goto tighten_begin;
+          }
+        }
+      }
+    }
+
+    // <> -> <A>
+    for (const string& pos: poss) {
+      for (size_t i = 0; i < n; ++i) {
+        if (q[i].t != VAR) continue;
+        q[i].t = POS;
+        q[i].pos = pos;
+        if (language_include(q, C)) goto tighten_begin;
+        q[i].t = VAR;
+      }
+    }
+
+    // <> -> <> <>
     r.resize(n+1);
     for (size_t i = 0; i < n; ++i) {
       r[i] = q[i];
-      if (q[i].t == VAR) {
-        r[i+1] = PUnit(pos);
-        for (int j = i+1; j < n; ++j) r[j+1] = q[j];
-        if (language_include(r, C)) {
-          q = r;
-          goto tighten_begin;
-        }
-      }
-    }
-  }
-
-  // <> -> <A> <>
-  for (const string&pos: poss) {
-    for (size_t i = 0; i < n; ++i) {
-      r[i] = q[i];
-      if (q[i].t == VAR and (i == 0 or q[i-1].t != VAR)) {
-        r[i] = PUnit(pos);
+      if (r[i].t == VAR && (i == 0 or r[i-1].t != VAR)) {
         r[i+1] = PUnit();
-        for (int j = i+1; j < n; ++j) r[j+1] = q[j];
+        for (int j = i + 1; j < n; ++j) r[j+1] = q[j];
         if (language_include(r, C)) {
           q = r;
           goto tighten_begin;
         }
       }
     }
-  }
 
-  // <> -> <A>
-  for (const string& pos: poss) {
-    for (size_t i = 0; i < n; ++i) {
-      if (q[i].t != VAR) continue;
-      q[i].t = POS;
-      q[i].pos = pos;
-      if (language_include(q, C)) goto tighten_begin;
-      q[i].t = VAR;
-    }
-  }
-
-  // <> -> <> <>
-  r.resize(n+1);
-  for (size_t i = 0; i < n; ++i) {
-    r[i] = q[i];
-    if (r[i].t == VAR && (i == 0 or r[i-1].t != VAR)) {
-      r[i+1] = PUnit();
-      for (int j = i + 1; j < n; ++j) r[j+1] = q[j];
-      if (language_include(r, C)) {
-        q = r;
-        goto tighten_begin;
-      }
-    }
-  }
-
-  return q;
+    return q;
   }
 
   vector<tuple<Pattern, vector<Text*>, vector<int>> >

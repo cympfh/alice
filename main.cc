@@ -126,20 +126,32 @@ void book_div(int idx, ostream*logptr) {
     for (size_t j = 0; j < div.size(); ++j) {
       auto&p = get<0>(div[j]);
       auto&C = get<1>(div[j]);
-      int cs = C.size();
-      if (cs >= GOOD_COVERING_FROM_BOOK) {
-        vector<Text*> S;
+      vector<Text*> S;
+
+      bool ok = false;
+      if (C.size() > GOOD_COVERING_FROM_BOOK) {
         for (auto&t: C) {
           if (not pushed.count(t)) {
             S.push_back(t);
-            pushed.insert(t);
           }
         }
-        int uplen = 0;
-        for (auto&t: S) uplen = max<int>(uplen, t->size());
-        book.push_back(make_tuple(p, S, uplen));
-      } else {
-        for (auto&t: C) if (not pushed.count(t)) pool.push_back(t);
+        if (S.size() > GOOD_COVERING_FROM_BOOK) {
+          int uplen = 0;
+          for (auto&t: S) {
+            uplen = max<int>(uplen, t->size());
+            pushed.insert(t);
+          }
+          p = mmg::tighten(p, S);
+          book.push_back(make_tuple(p, S, uplen));
+          ok = true;
+        }
+      }
+
+      if (not ok) {
+        for (auto&t: C) if (not pushed.count(t)) {
+          pushed.insert(t);
+          pool.push_back(t);
+        }
       }
     }
   }
@@ -272,9 +284,6 @@ int main(int argc, char *argv[])
   // 学習できていないテキスト
   vector<Text*> pool;
 
-  // pool からのランダムサンプリング用
-  vector<Text*> textbook(POOL_SIZE);
-
   book_ptr = &book;
   pool_ptr = &pool;
 
@@ -350,15 +359,21 @@ int main(int argc, char *argv[])
       {
         int cx = 0; // 5回連続で失敗したら失敗にする
         while (cx < 5 and pool.size() > POOL_SIZE) {
-
-          for (size_t j = 0; j < POOL_SIZE; ++j) {
+          vector<Text*> textbook(POOL_SIZE); // random sampled from pool
+          vector<int> textbook_idx(POOL_SIZE);
+          for (size_t j = 0; j < POOL_SIZE-1; ++j) {
             textbook[j] = pool[j];
+            textbook_idx[j] = j;
           }
-          for (size_t j = POOL_SIZE; j < pool.size() - 1; ++j) {
+          for (size_t j = POOL_SIZE-1; j < pool.size() - 1; ++j) {
             int k = rand() % j;
-            if (k < POOL_SIZE) textbook[k] = pool[j];
+            if (k < POOL_SIZE) {
+              textbook[k] = pool[j];
+              textbook_idx[k] = j;
+            }
           }
           textbook[POOL_SIZE-1] = pool[pool.size()-1];
+          textbook_idx[POOL_SIZE-1] = pool.size() - 1;
 
           auto result = mmg::kmmg(POOL_SIZE /2, textbook, false);
 
@@ -376,7 +391,9 @@ int main(int argc, char *argv[])
             int uplen = 0;
             for (auto&t: C) uplen = max<int>(uplen, t->size());
             book.push_back(make_tuple(p, C, uplen));
-            for (int idx: c) learned.push_back(idx);
+            for (int id: c) {
+              learned.push_back(textbook_idx[id]);
+            }
           }
 
           bool learned_success = learned.size() > 0;
@@ -384,13 +401,11 @@ int main(int argc, char *argv[])
           if (logging) {
             log << endl;
             log << "* learning from pool:" << (learned_success ? "success" : "failed") << " {{{" << endl;
-            log << "** textbook" << endl;
-            for (int i = 0; i < textbook.size(); ++i)
-              log << i << ". " << *(textbook[i]) << endl;
+            log << "** textbook (" << textbook.size() << ")" << endl;
+            // rep (i, textbook.size()) log << i << ". " << *(textbook[i]) << endl;
             log << "** kmmg result" << endl;
-            for (int i = 0; i < result.size(); ++i) {
+            rep (i, result.size())
               log << i << ". " << (get<0>(result[i])) << " (" << (get<1>(result[i]).size()) << ')' << endl;
-            }
             log << "}}}" << endl;
             log << endl;
           }
@@ -403,7 +418,6 @@ int main(int argc, char *argv[])
           } else {
             ++cx;
           }
-
         }
       }
     }
@@ -419,11 +433,9 @@ int main(int argc, char *argv[])
       }
       log << "}}}" << endl;
       log << "## pool:" << pool.size() << " {{{" << endl;
-      /*
       for (size_t j = 0; j < pool.size(); ++j) {
         log << "  " << j << ". " << *(pool[j]) << endl;
       }
-      */
       log << "}}}" << endl;
       log << endl;
     }
