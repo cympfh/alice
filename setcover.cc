@@ -9,7 +9,12 @@ bool subset(const set<int>&a, const set<int>&b) {
   return true;
 }
 
-set<int> setcover(vector<pair<set<int>, int>> ls) {
+/*
+ * Set Cover Problem
+ * min Sum(weight)
+ */
+
+set<int> setcover(vector<pair<set<int>, double>> ls) {
   auto bk = ls;
   const int N = ls.size();
   set<int> ret;
@@ -19,7 +24,6 @@ set<int> setcover(vector<pair<set<int>, int>> ls) {
       uncovered.insert(x);
     }
   }
-  int tei = 4;
   while (uncovered.size() > 0) {
     int k = -1;
     double mr = 1e11;
@@ -32,6 +36,7 @@ set<int> setcover(vector<pair<set<int>, int>> ls) {
         mr = r;
       }
     }
+    // cerr << "select : " << k << " -- (cs, w) = " << ls[k].first.size() << ", "  << ls[k].second << " (w/s=" << mr << ")" << endl;
     for (int j: ret) {
       if (subset(bk[j].first, bk[k].first)) {
         ret.erase(j);
@@ -50,7 +55,7 @@ set<int> setcover(vector<pair<set<int>, int>> ls) {
   return ret;
 }
 
-set<int> unweighted_setcover(vector<pair<set<int>, int>> ls) {
+set<int> unweighted_setcover(vector<pair<set<int>, double>> ls) {
   auto bk = ls;
   const int N = ls.size();
   set<int> ret;
@@ -60,7 +65,6 @@ set<int> unweighted_setcover(vector<pair<set<int>, int>> ls) {
       uncovered.insert(x);
     }
   }
-  int tei = 4;
   while (uncovered.size() > 0) {
     int k = -1;
     int mr;

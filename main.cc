@@ -67,7 +67,7 @@ void usage() {
 /*
  * book[idx] を division します
  */
-void book_div(int idx, ostream*logptr, int BOOK_SIZE) {
+void book_div(int idx, ostream*logptr) {
   assert(book_ptr != nullptr);
   assert(pool_ptr != nullptr);
   assert(idx >= 0);
@@ -80,63 +80,66 @@ void book_div(int idx, ostream*logptr, int BOOK_SIZE) {
   bool logging = logptr != nullptr;
   ostream&log = *logptr;
 
-  int cs = get<1>(book[idx]).size();
-  if (cs > BOOK_SIZE)
-  {
-    auto&p = get<0>(book[idx]);
-    auto&C = get<1>(book[idx]);
-    auto c = iota(C.size());
+  auto&p = get<0>(book[idx]);
+  auto&C = get<1>(book[idx]);
+  auto c = iota(C.size());
 
-    // is seed pattern?
-    if (get<2>(book[idx]) == inf) {
-      if (logging) log << p << " -> ";
-      p = tighten(p, C);
-      if (logging) log << p << endl;
-      int max_len = 0;
-      for (auto&t: C) max_len = max<int>(max_len, t->size());
-      get<2>(book[idx]) = max_len;
+  // is seed pattern?
+  if (get<2>(book[idx]) == inf) {
+    cerr << p << " -> ";
+    p = mmg::tighten(p, C);
+    cerr << p << endl;
+    int max_len = 0;
+    for (auto&t: C) max_len = max<int>(max_len, t->size());
+    get<2>(book[idx]) = max_len;
+  }
+
+  auto div = mmg::kdivision(C.size() /2, p, C, c);
+  bool ok = div.size() >= 2;
+
+  if (ok) {
+    ok = false;
+    for (size_t i = 0; i < div.size(); ++i) {
+      int cs = get<2>(div[i]).size();
+      if (cs >= GOOD_COVERING_FROM_BOOK) ok = true;
     }
+  }
 
-    auto div = kdivision(C.size(), p, C, c, false);
-    bool ok = div.size() >= 2;
-
-    if (ok) {
-      ok = false;
-      for (size_t i = 0; i < div.size(); ++i) {
-        int cs = get<2>(div[i]).size();
-        // if (BOOK_SIZE >= cs and cs >= GOOD_COVERING_FROM_BOOK) ok = true;
-        if (cs >= GOOD_COVERING_FROM_BOOK) ok = true;
-      }
+  if (logging) {
+    log << endl;
+    log << "* div of book[" << idx << "] (" << get<0>(book[idx]) << ") {{{" << endl;
+    for (int i = 0; i < get<1>(book[idx]).size(); ++i)
+      log << i << ". " << *(get<1>(book[idx])[i]) << endl;
+    log << "div result" << endl;
+    for (int i = 0; i < div.size(); ++i) {
+      log << i << ". " << (get<0>(div[i])) << " (" << (get<1>(div[i]).size()) << ')' << endl;
     }
+    log << "* div_success=" << ok << endl;
+    log << "}}}" << endl;
+    log << endl;
+  }
 
-    if (logging) {
-      log << endl;
-      log << "* div of book[" << idx << "] (" << get<0>(book[idx]) << ") {{{" << endl;
-      for (int i = 0; i < get<1>(book[idx]).size(); ++i)
-        log << i << ". " << *(get<1>(book[idx])[i]) << endl;
-      log << "div result" << endl;
-      for (int i = 0; i < div.size(); ++i) {
-        log << i << ". " << (get<0>(div[i])) << " (" << (get<1>(div[i]).size()) << ')' << endl;
-      }
-      log << "* div_success=" << ok << endl;
-      log << "}}}" << endl;
-      log << endl;
-    }
+  set<Text*> pushed;
 
-    if (ok) {
-      book.erase(begin(book) + idx);
-      for (size_t j = 0; j < div.size(); ++j) {
-        auto&p = get<0>(div[j]);
-        auto&C = get<1>(div[j]);
-        int cs = C.size();
-        // if (BOOK_SIZE >= cs and cs >= GOOD_COVERING_FROM_BOOK) {
-        if (cs >= GOOD_COVERING_FROM_BOOK) {
-          int uplen = 0;
-          for (auto&t: C) uplen = max<int>(uplen, t->size());
-          book.push_back(make_tuple(p, C, uplen));
-        } else {
-          for (auto&t: C) pool.push_back(t);
+  if (ok) {
+    book.erase(begin(book) + idx);
+    for (size_t j = 0; j < div.size(); ++j) {
+      auto&p = get<0>(div[j]);
+      auto&C = get<1>(div[j]);
+      int cs = C.size();
+      if (cs >= GOOD_COVERING_FROM_BOOK) {
+        vector<Text*> S;
+        for (auto&t: C) {
+          if (not pushed.count(t)) {
+            S.push_back(t);
+            pushed.insert(t);
+          }
         }
+        int uplen = 0;
+        for (auto&t: S) uplen = max<int>(uplen, t->size());
+        book.push_back(make_tuple(p, S, uplen));
+      } else {
+        for (auto&t: C) if (not pushed.count(t)) pool.push_back(t);
       }
     }
   }
@@ -309,6 +312,14 @@ int main(int argc, char *argv[])
       log << endl;
     }
 
+    {
+      int c = pool.size();
+      rep (i, book.size()) {
+        c += get<1>(book[i]).size();
+      }
+      assert(time == c);
+    }
+
     // exists? a pattern `p` s.t. `t <= p`
     vector<int> matching_indices;
     {
@@ -319,11 +330,16 @@ int main(int argc, char *argv[])
 
     if (not matching_indices.empty()) {
       // put into book
-      for (int idx: matching_indices) {
+      // for (int idx: matching_indices) {
+      { int idx = matching_indices[0];//rand() % matching_indices.size()];
         if (logging) log << "# put into book[" << idx << "]" << endl;
         get<1>(book[idx]).push_back(&doc[time]);
         get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
-        book_div(idx, (logging ? &log : nullptr), BOOK_SIZE);
+        if (get<2>(book[idx]) == inf) { cerr << "* seed hit!" << endl; }
+        if (get<1>(book[idx]).size() > BOOK_SIZE) {
+          if (get<2>(book[idx]) == inf) { cerr << "* seed div!!" << endl; }
+          book_div(idx, (logging ? &log : nullptr));
+        }
       }
     } else {
       // put into pool
@@ -344,7 +360,7 @@ int main(int argc, char *argv[])
           }
           textbook[POOL_SIZE-1] = pool[pool.size()-1];
 
-          auto result = kmmg(POOL_SIZE *1/4, textbook, false);
+          auto result = mmg::kmmg(POOL_SIZE /2, textbook, false);
 
           vector<int> learned; // indices on pool
           for (size_t j = 0; j < result.size(); ++j) {
@@ -412,12 +428,13 @@ int main(int argc, char *argv[])
       log << endl;
     }
 
-    if (BOOK_SIZE > 2 and time%50==0) {
-      BOOK_SIZE--;
+    if (BOOK_SIZE > 3 and time%100==0) {
+      BOOK_SIZE *= 0.9;
       if (logging) log << "BOOK_SIZE=" << BOOK_SIZE << endl;
       for (size_t j = 0; j < book.size(); ++j) {
-        if (get<1>(book[j]).size() == BOOK_SIZE + 1) { // ギリギリはみ出した
-          book_div(j, (logging ? &log : nullptr), BOOK_SIZE);
+        // if (get<1>(book[j]).size() == BOOK_SIZE + 1) { // ギリギリはみ出した
+        if (get<1>(book[j]).size() > BOOK_SIZE) {
+          book_div(j, (logging ? &log : nullptr));
         }
       }
     }
@@ -427,23 +444,7 @@ int main(int argc, char *argv[])
 
   for (size_t j = 0; j < book.size(); ++j) {
     if (get<2>(book[j]) == inf and get<1>(book[j]).size() > 0)
-      get<0>(book[j]) = tighten(get<0>(book[j]), get<1>(book[j]));
-  }
-
-  if (log_mode)
-  {
-    log << endl;
-    log << "{{{" << endl;
-    int jj = 0;
-    for (size_t j = 0; j < book.size(); ++j) {
-      if (get<1>(book[j]).size() == 0) continue;
-      log << (jj++) << ". " << get<0>(book[j]) << endl;
-      for (size_t i = 0; i < get<1>(book[j]).size(); ++i) {
-        log << "  " << i << ". " << *(get<1>(book[j])[i]) << endl;
-      }
-      log << endl;
-    }
-    log << "}}}" << endl;
+      get<0>(book[j]) = mmg::tighten(get<0>(book[j]), get<1>(book[j]));
   }
 
   if (not BOOK_ONLY) {

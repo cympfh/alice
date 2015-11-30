@@ -1,22 +1,31 @@
-Pattern tighten(const Pattern&p, const vector<Text*>&C);
 
-vector< tuple<Pattern, vector<Text*>, vector<int>> >
-kdivision(
-    int k,
-    const Pattern&p,
-    const vector<Text*>&S,
-    const vector<int>&s,
-    bool DEBUG=false);
+namespace minl {
+  Text minl(const vector<Text*>&S);
+}
 
-vector<tuple<Pattern, vector<Text*>, vector<int>>>
-kmmg(
-    int k,
-    vector<Text*>&C,
-    bool DEBUG=false);
+int word_intersection(const vector<Text*>&);
 
-vector<tuple<Pattern, vector<Text*>, vector<int>>>
-kmmg(
-    int k,
-    vector<Text*>&C,
-    const Pattern&p,
-    bool DEBUG=false);
+namespace mmg {
+  vector< tuple<Pattern, vector<Text*>, vector<int>> >
+  kdivision(
+      int k,
+      const Pattern&p,
+      const vector<Text*>&S,
+      const vector<int>&s,
+      bool DEBUG=false);
+
+  vector<tuple<Pattern, vector<Text*>, vector<int>>>
+  kmmg(
+      int k,
+      vector<Text*>&C,
+      bool DEBUG=false);
+
+  vector<tuple<Pattern, vector<Text*>, vector<int>>>
+  kmmg(
+      int k,
+      vector<Text*>&C,
+      const Pattern&p,
+      bool DEBUG=false);
+
+  Pattern tighten(const Pattern&p, const vector<Text*>&C);
+}

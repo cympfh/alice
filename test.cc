@@ -17,6 +17,21 @@ void message(const string&msg) {
 
 int main()
 {
+  /*
+   * LCS
+   */
+  {
+    Text s = { Alphabet("G", "G"), Alphabet("A", "A"), Alphabet("C", "C") };
+    Text t = { Alphabet("G", "G"), Alphabet("C", "C"), Alphabet("A", "A") };
+    Text u = { Alphabet("G", "G"), Alphabet("C", "C"), Alphabet("C", "C") };
+    Text r = { Alphabet("G", "G"), Alphabet("C", "C") };
+    vector<Text*> doc = { &s, &t, &u };
+    trace(minl::minl(doc));
+    assert(minl::minl(doc) == r);
+
+    assert(word_intersection(doc) == 2);
+  }
+
   {
     Pattern p = { PUnit(), PUnit(",", ","), PUnit("DT", "the"), PUnit() };
     Pattern q = { PUnit(), PUnit(",", ","), PUnit("DT", "the"), PUnit() };

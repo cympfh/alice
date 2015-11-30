@@ -1,8 +1,8 @@
 CXXFLAGS=-O3 -std=c++11
 
-SEED=../PubMed/alice/seeds/tfidf
+SEED=--seed ../PubMed/alice/seeds/CONCLUSION.tfidf 
 mytest: alice
-	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D --seed $(SEED) -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
+	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
 	cat ./mytest.base
 	cat ./test.out | sort -nr -k1,1 | sed 's/^[0-9]* //g' | ../PubMed/eval-alice/eval.exe ~/Corpus/abstracts/test-post.txt | tee -a test.log
 	cp test.log log/$$(date "+%m%d.%H%M.%S.log")
@@ -19,9 +19,9 @@ pattern.o: pattern.cc
 text.o: text.cc
 ngram.o: ngram.cc text.o
 
-profile:
+profile: main.cc $(OBJS)
 	g++ -std=c++11 -pg main.cc $(OBJS)
-	head -n 100 ~/Corpus/abstracts/train-sentences/CONCLUSION.post | ./a.out -D >/dev/null
+	head -n 200 ~/Corpus/abstracts/train-sentences/CONCLUSION.post | ./a.out -D >/dev/null
 	gprof a.out gmon.out | less
 
 .PHONY: test clean
