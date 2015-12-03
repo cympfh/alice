@@ -251,7 +251,7 @@ tighten_begin:
       map<string, vector<string>> dict; // dict[pos] = { word }
     for (auto&t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
 
-    vector<string> poss = { "NN" };
+    vector<string> poss;
     for (auto&kv: dict) poss.push_back(kv.first);
 
     // <A> -> a/A

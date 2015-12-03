@@ -2,8 +2,8 @@ CXXFLAGS=-O3 -std=c++11
 
 SEED=--seed ../PubMed/alice/seeds/CONCLUSION.tfidf 
 mytest: alice
-	#cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 10000 | awk '{ a=gensub(/[^ ]/, "", "g", $$0); print length(a),$$0 }' | sort -n -k1,1 | awk '{$$1="";print $$0}' | sed 's/^ *//g' | head -n 2000 |./alice -D -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
-	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D -P 30 -B 20 --book-only --freq -L test.log -I 1000 >test.out
+	cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 10000 | awk '{ a=gensub(/[^ ]/, "", "g", $$0); print length(a),$$0 }' | sort -n -k1,1 | awk '{$$1="";print $$0}' | sed 's/^ *//g' | head -n 2000 |./alice -D -P 30 -B 20 --book-only --freq -L test.log -I 300 >test.out
+	#cat ~/Corpus/abstracts/train-sentences/CONCLUSION.post | head -n 2000 | ./alice -D -P 30 -B 20 --book-only --freq -L test.log -I 1000 >test.out
 	cat ./mytest.base
 	cat ./test.out | sort -nr -k1,1 | sed 's/^[0-9]* //g' | ../PubMed/eval-alice/eval.exe ~/Corpus/abstracts/test-post.txt | tee -a test.log
 	cp test.log log/$$(date "+%m%d.%H%M.%S.log")

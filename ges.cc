@@ -62,8 +62,7 @@ bool naiive_preceq(const Text&s, const Pattern&p) {
 
   // tail matching
   while (m > 0 and p[m-1].t != VAR) {
-    if (preceq(s[n-1], p[m-1]))
-    {
+    if (preceq(s[n-1], p[m-1])) {
       --n; --m;
     } else {
       return false;

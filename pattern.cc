@@ -40,7 +40,6 @@ std::ostream& operator<<(std::ostream&os, const PUnit&r) {
     case POS:
       return os << '<' << r.pos << '>';
     case WORD:
-      if (r.word == r.pos) return os << r.word;
       return os << r.word << '/' << r.pos;
     default:
       return os << "(???)";

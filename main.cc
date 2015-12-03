@@ -86,9 +86,9 @@ void book_div(int idx, ostream*logptr) {
 
   // is seed pattern?
   if (get<2>(book[idx]) == inf) {
-    cerr << p << " -> ";
+    // cerr << p << " -> ";
     p = mmg::tighten(p, C);
-    cerr << p << endl;
+    // cerr << p << endl;
     int max_len = 0;
     for (auto&t: C) max_len = max<int>(max_len, t->size());
     get<2>(book[idx]) = max_len;
@@ -344,9 +344,7 @@ int main(int argc, char *argv[])
         if (logging) log << "# put into book[" << idx << "]" << endl;
         get<1>(book[idx]).push_back(&doc[time]);
         get<2>(book[idx]) = max<int>(get<2>(book[idx]), t.size());
-        if (get<2>(book[idx]) == inf) { cerr << "* seed hit!" << endl; }
         if (get<1>(book[idx]).size() > BOOK_SIZE) {
-          if (get<2>(book[idx]) == inf) { cerr << "* seed div!!" << endl; }
           book_div(idx, (logging ? &log : nullptr));
         }
       }
@@ -440,6 +438,7 @@ int main(int argc, char *argv[])
       log << endl;
     }
 
+    /*
     if (BOOK_SIZE > 3 and time%100==0) {
       BOOK_SIZE *= 0.9;
       if (logging) log << "BOOK_SIZE=" << BOOK_SIZE << endl;
@@ -450,6 +449,7 @@ int main(int argc, char *argv[])
         }
       }
     }
+      */
 
   } // end of stream learning
   cerr << endl;
