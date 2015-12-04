@@ -251,7 +251,7 @@ tighten_begin:
       map<string, vector<string>> dict; // dict[pos] = { word }
     for (auto&t: C) for (const Alphabet& a: *t) dict[a.pos].push_back(a.word);
 
-    vector<string> poss = { "NN" };
+    vector<string> poss;
     for (auto&kv: dict) poss.push_back(kv.first);
 
     // <A> -> a/A
@@ -383,6 +383,7 @@ tighten_begin:
             {
               double s = double(C.size()) / S.size();
               double c = completion(C);
+              // w = s * log(s) * log(c);
               w = s * log(s * .9) * log(c * .9);
             }
 
@@ -403,18 +404,10 @@ tighten_begin:
               } else {
                 cerr << i << ". " << get<0>(ps[i]) << " (" << get<2>(ps[i]).size() << "; " << get<2>(ps[i]) << ')';
                 cerr << "; w = " << ls[i].second;
-                cerr << "; (w/s) = " << (ls[i].second / double(get<2>(ps[i]).size()) );
                 cerr << endl;
               }
             }
             cerr << "}}}" << endl;
-
-            vector<pair<int, double>> v;
-            rep (i, ls.size()) {
-              v.push_back( { ls[i].first.size() , ls[i].second / ls[i].first.size() });
-            }
-            sort(begin(v),end(v));
-            rep (i,v.size()) cerr << v[i] << endl;
           }}}
 
           set<int> sol;
