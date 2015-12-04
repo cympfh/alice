@@ -10,7 +10,6 @@ const int inf = 1e9;
 #include "ges.h"
 #include "read.h"
 #include "minl.h"
-#include "ngram.h"
 #include "util.h"
 
 const int GOOD_COVERING_FROM_POOL = 2; // これ以上被覆してたら良いとする
@@ -60,6 +59,7 @@ void usage() {
   cerr << "  --frequency                        output frequency of each pattern before it" << endl;
   cerr << "  -I  <int>                          only when (time < I) or (T - time < I) (= T)" << endl;
   cerr << "  -D, --debug                        debug mode" << endl;
+  cerr << "  -q, --quiet                        quiet mode" << endl;
   cerr << "  -?, --help                         it is this" << endl;
   exit(0);
 }
@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
    */
 
   bool DEBUG = false;
+  bool QUIET = false;
   char delimiter = '_';
   double limit = 1.0;
   bool log_mode = false;
@@ -223,6 +224,9 @@ int main(int argc, char *argv[])
     else if (arg == "-D" or arg == "--debug") {
       DEBUG = true;
     }
+    else if (arg == "-q" or arg == "--quiet") {
+      QUIET = true;
+    }
     else if (arg == "-?" or arg == "--help") {
       usage();
     }
@@ -257,19 +261,15 @@ int main(int argc, char *argv[])
 
   vector<Text> doc;
 
-  if (restargs.size() > 0)
-  {
+  if (restargs.size() > 0) {
     cerr << "scan from text:" << restargs[0] << " ... ";
     if (log_mode) log << "scan from text:" << restargs[0] << endl;
     ifstream sin(restargs[0]);
-    for (Text t; t = read_text(sin, delimiter), sin;) doc.push_back(t);
-  }
-  else
-  {
-    // cin
+    read_doc(sin, doc, delimiter);
+  } else {
     cerr << "scan from stdin" << " ... ";
     if (log_mode) log << "scan from stdin" << endl;
-    for (Text t; t = read_text(cin, delimiter), cin;) doc.push_back(t);
+    read_doc(cin, doc, delimiter);
   }
   cerr << "finished." << endl;
 
@@ -315,13 +315,13 @@ int main(int argc, char *argv[])
 
     Text&t = doc[time];
 
-    cerr << "\rtime=" << time;
+    if (not QUIET) cerr << "\rtime=" << time;
     if (logging) {
       log << "#-- time=" << time << " : " << t << endl;
       log << endl;
     }
 
-    {
+    if (DEBUG) {
       int c = pool.size();
       rep (i, book.size()) {
         c += get<1>(book[i]).size();
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
     }
 
   } // end of stream learning
-  cerr << endl;
+  if (not QUIET) cerr << endl;
 
   for (size_t j = 0; j < book.size(); ++j) {
     if (get<2>(book[j]) == inf and get<1>(book[j]).size() > 0)

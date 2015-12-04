@@ -32,27 +32,17 @@ Pattern read_pattern(istream&is, char d) {
   return p;
 }
 
-Text read_text(istream&is, char d) {
-  vector<Alphabet> as;
-  string line; getline(is, line);
-  stringstream ss(line);
-  string s;
-  while (ss >> s) {
-    auto wp = split(s, d);
-    as.push_back(Alphabet(wp.second, wp.first));
-  }
-  Text t;
-  for (size_t i = 0; i < as.size(); ++i) {
-    auto&a = as[i];
-    /*
-    int n = t.size();
-    if (n > 0 and t[n-1].pos == a.pos) {
-      t[n-1].word += '\t' + a.word;
-      continue;
+void read_doc(istream&is, vector<Text>&doc, char d) {
+  string line;
+  for (;getline(is, line);) {
+    if (line == "") continue;
+    Text t;
+    stringstream ss(line);
+    string w;
+    while (ss >> w) {
+      auto wp = split(w, d);
+      t.push_back(Alphabet(wp.second, wp.first));
     }
-    */
-    t.push_back(a);
+    doc.push_back(t);
   }
-  return t;
 }
-

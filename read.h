@@ -1,2 +1,2 @@
 Pattern read_pattern(istream&, char delimiter);
-Text read_text(istream&, char delimiter);
+void read_doc(istream&, vector<Text>&, char delimiter);

@@ -17,43 +17,6 @@ bool preceq(const Alphabet&a, const PUnit&u) {
   return (a.pos == u.pos) and (u.t == POS or a.word == u.word);
 }
 
-int table[200][200];
-
-bool search_preceq(const Text&s, const Pattern&p) {
-  int n = s.size();
-  int m = p.size();
-  if (n < m) return false;
-  if (m == 0) return false;
-  // trace(make_pair(n, s)); trace(make_pair(m, p));
-
-  rep (i, n) rep (j, m) table[i][j] = 0;
-  queue<pair<int,int>> q;
-  if (preceq(s[0], p[0])) q.push({0, 0});
-
-  while (not q.empty()) {
-    auto P = q.front(); q.pop();
-    int i = P.first;
-    int j = P.second;
-    if (i == n-1 and j == m-1) return true;
-    if (table[i][j]) continue;
-    if (i >= n or j >= m) continue;
-
-    if (i < n-1 and j < m-1)
-      if (preceq(s[i+1], p[j+1])) {
-        if (table[i+1][j+1]) continue;
-        q.push({i+1, j+1});
-      }
-    if (i < n-1)
-      if (p[j].t != WORD and preceq(s[i+1], p[j])) {
-        if (table[i+1][j]) continue;
-        q.push({i+1, j});
-      }
-    table[i][j] = 1;
-  }
-
-  return false;
-}
-
 bool naiive_preceq(const Text&s, const Pattern&p) {
   int n = s.size();
   int m = p.size();

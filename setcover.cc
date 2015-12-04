@@ -36,7 +36,6 @@ set<int> setcover(vector<pair<set<int>, double>> ls) {
         mr = r;
       }
     }
-    // cerr << "select : " << k << " -- (cs, w) = " << ls[k].first.size() << ", "  << ls[k].second << " (w/s=" << mr << ")" << endl;
     for (int j: ret) {
       if (subset(bk[j].first, bk[k].first)) {
         ret.erase(j);

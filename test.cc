@@ -9,7 +9,6 @@ using namespace std;
 #include "read.h"
 #include "minl.h"
 #include "util.h"
-#include "ngram.h"
 
 void message(const string&msg) {
   cerr << "* \e[33mtest[\e[0m" << msg << "\e[33m] passed.\e[0m" << endl;
@@ -37,19 +36,7 @@ int main()
     Pattern q = { PUnit(), PUnit(",", ","), PUnit("DT", "the"), PUnit() };
     assert( p == q );
   }
-  /*
-   * n-gram
-   */
-  {
-    Text t = { Alphabet("A", "a"), Alphabet("B", "b"), Alphabet("B", "b"), Alphabet("C", "c") };
-    vector<Text> doc = {t};
-    vector<pair<int, Gram>> res = ngram({3}, doc);
-    assert(res.size() == 2); // !
-    rep (i, res.size()) {
-      assert(get<2>(res[i].second).size() == 3);
-    }
-  }
-  message("n-gram");
+  message("LCS");
 
   /*
    * text <= pattern
