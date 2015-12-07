@@ -52,8 +52,8 @@ void usage() {
   cerr << "  -d, --delimiter                    delimiter character between word and POS in text" << endl;
   cerr << "  -l, --limit                        preserved option" << endl;
   cerr << "  -S, --seed <filename=>             seed pattern" << endl;
-  cerr << "  -P, --pool-size <int>              maximum pool size (= 20)" << endl;
-  cerr << "  -B, --book-size <int>              maximum size of a book (= 5)" << endl;
+  cerr << "  -P, --pool-size <int>              maximum pool size (= 30)" << endl;
+  cerr << "  -B, --book-size <int>              maximum size of a book (= 20)" << endl;
   cerr << "  -L, --log <filename=>              output logfile" << endl;
   cerr << "  --book-only                        output only book patterns" << endl;
   cerr << "  --frequency                        output frequency of each pattern before it" << endl;
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   bool log_mode = false;
   ofstream log;
   int log_I = -1;
-  int POOL_SIZE = 20;
+  int POOL_SIZE = 30;
   int BOOK_SIZE = 20;
   string seedfile = "";
 
