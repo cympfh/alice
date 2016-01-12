@@ -94,7 +94,7 @@ void book_div(int idx, ostream*logptr) {
     get<2>(book[idx]) = max_len;
   }
 
-  auto div = mmg::kdivision(C.size() /2, p, C, c);
+  auto div = mmg::kdivision(C.size() /2, p, C, c, true);
   bool ok = div.size() >= 2;
 
   if (ok) {

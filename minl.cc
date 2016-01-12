@@ -379,20 +379,26 @@ tighten_begin:
             auto&p = get<0>(ps[i]);
             auto&C = get<1>(ps[i]);
 
+            // 小さほうが良い
             double w;
             {
-              double s = double(C.size()) / S.size();
+              double s = double(C.size()) / S.size(); // s,c は大きい方が良い
               double c = completion(C);
               // w = s * log(s) * log(c);
-              w = s * log(s * .9) * log(c * .9);
+              // w = s * log(s * .9) * log(c * .9);
+              // w = log(1.0 / (1.0 + s)) * log(1.0 / (1.0 + c));
+              w = 1.0 / (1.0+s) / (1.0+c);
+              if (DEBUG) {
+                cerr << "weight i=" << i << ": " << w << " (s,c)=(" << s << "," << c << "); p=" << ps[i] << endl;
+              }
             }
 
             set<int> s; for (int j: get<2>(ps[i])) s.insert(j);
             int sc = s.size();
-            ls[i] = { s, -w };
-            // if (DEBUG) cerr << s.size() << ' ' << completion(C) << endl;
+            ls[i] = { s, w };
           }
 
+          /*
           if (DEBUG) {{{
             const int NN=200;
             cerr << "* cspc:" << ps.size() << endl;
@@ -409,9 +415,13 @@ tighten_begin:
             }
             cerr << "}}}" << endl;
           }}}
+          */
 
           set<int> sol;
           sol = setcover(ls);
+          if (DEBUG) {
+            cerr << "chosen: "; for (auto i:sol) cerr << i << ' '; cerr << endl;
+          }
           if (sol.size() > k) {
             sol = unweighted_setcover(ls);
           }
