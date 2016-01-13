@@ -385,9 +385,7 @@ tighten_begin:
               double s = double(C.size()) / S.size(); // s,c は大きい方が良い
               double c = completion(C);
               // w = s * log(s) * log(c);
-              // w = s * log(s * .9) * log(c * .9);
-              // w = log(1.0 / (1.0 + s)) * log(1.0 / (1.0 + c));
-              w = 1.0 / (1.0+s) / (1.0+c);
+              w = log(s) * log(c * .9);
               if (DEBUG) {
                 cerr << "weight i=" << i << ": " << w << " (s,c)=(" << s << "," << c << "); p=" << ps[i] << endl;
               }
